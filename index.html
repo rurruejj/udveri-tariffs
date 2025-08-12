@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Тарифы «У Двери»</title>
+  <style>
+    :root { --bg:#fff; --text:#111; --card:#f6f6f6; --accent:#16a34a; }
+    body{margin:0;padding:16px;font-family:-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    h1{margin:0 0 12px;font-size:20px}
+    .card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
+    .title{font-weight:700;margin-bottom:6px}
+    .desc{opacity:.8;margin:0 0 10px}
+    .price{font-size:18px;font-weight:700;margin:6px 0 12px}
+    button{width:100%;padding:12px 14px;border:0;border-radius:10px;font-size:16px;cursor:pointer;background:var(--accent);color:#fff}
+    small{opacity:.7}
+  </style>
+</head>
+<body>
+  <h1>Тарифы «У Двери»</h1>
+
+  <div class="card">
+    <div class="title">Бесплатный запуск</div>
+    <p class="desc">Вынос мусора — 0 ₽. Пробуйте сервис без оплаты.</p>
+    <div class="price">0 ₽</div>
+    <button id="choose-free">Выбрать</button>
+  </div>
+
+  <div class="card">
+    <div class="title">Плюс</div>
+    <p class="desc">Приоритетный выезд и напоминания.</p>
+    <div class="price">299 ₽/мес</div>
+    <button id="choose-plus">Выбрать</button>
+  </div>
+
+  <small>Оформление — в чате с ботом.</small>
+
+  <!-- Подключаем SDK Телеграма (закрывающий тег обязателен!) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // Подхватываем тему Телеграма
+    const tp = tg.themeParams || {};
+    if (tp.bg_color) document.documentElement.style.setProperty('--bg', tp.bg_color);
+    if (tp.text_color) document.documentElement.style.setProperty('--text', tp.text_color);
+    if (tp.secondary_bg_color) document.documentElement.style.setProperty('--card', tp.secondary_bg_color);
+    if (tp.button_color) document.documentElement.style.setProperty('--accent', tp.button_color);
+
+    function send(action, payload){ tg.sendData(JSON.stringify({action, ...payload})); }
+
+    document.getElementById('choose-free').onclick = () => send('pick_tariff', { plan: 'free' });
+    document.getElementById('choose-plus').onclick = () => send('pick_tariff', { plan: 'plus' });
+  </script>
+</body>
+</html>
