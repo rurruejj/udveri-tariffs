@@ -3,55 +3,174 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Тарифы «У Двери»</title>
+  <title>У Двери — мини‑приложение</title>
   <style>
-    :root { --bg:#fff; --text:#111; --card:#f6f6f6; --accent:#16a34a; }
-    body{margin:0;padding:16px;font-family:-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    h1{margin:0 0 12px;font-size:20px}
+    :root { --bg:#fff; --text:#111; --card:#f6f6f6; --muted:#8b8b8b; --accent:#16a34a; --line:#e5e5e5; }
+    *{box-sizing:border-box}
+    body{margin:0;padding:0;font-family:-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;background:var(--bg);padding:14px 16px;border-bottom:1px solid var(--line);z-index:10}
+    h1{margin:0;font-size:18px}
+    main{padding:16px}
+    .hidden{display:none}
     .card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
     .title{font-weight:700;margin-bottom:6px}
-    .desc{opacity:.8;margin:0 0 10px}
-    .price{font-size:18px;font-weight:700;margin:6px 0 12px}
-    button{width:100%;padding:12px 14px;border:0;border-radius:10px;font-size:16px;cursor:pointer;background:var(--accent);color:#fff}
+    .desc{opacity:.9;margin:0 0 10px}
+    .row{display:flex;gap:8px}
+    input,select{width:100%;padding:12px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff}
+    button{width:100%;padding:12px 14px;border:0;border-radius:12px;font-size:16px;cursor:pointer;background:var(--accent);color:#fff}
     small{opacity:.7}
+
+    /* Табы снизу */
+    nav{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);display:flex}
+    nav button{flex:1;background:transparent;color:inherit;border-radius:0;padding:12px 6px}
+    nav button.active{border-top:3px solid var(--accent);}
+    .tab-label{display:block;font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Тарифы «У Двери»</h1>
+  <header><h1 id="title">Заявка</h1></header>
+  <main>
+    <!-- TAB: REQUEST -->
+    <section id="tab-request">
+      <div class="card">
+        <div class="title">Оставить заявку</div>
+        <p class="desc">Выберите количество пакетов и отправьте заявку. Курьер заберёт мусор у двери.</p>
+        <div class="row">
+          <select id="bags">
+            <option value="1">1 пакет</option>
+            <option value="2" selected>2 пакета</option>
+            <option value="3">3 пакета</option>
+            <option value="4">4 пакета</option>
+            <option value="5">5 пакетов</option>
+          </select>
+        </div>
+        <div style="height:8px"></div>
+        <button id="send-request">Отправить заявку</button>
+      </div>
+      <small>После отправки бот подтвердит заявку в чате.</small>
+    </section>
 
-  <div class="card">
-    <div class="title">Бесплатный запуск</div>
-    <p class="desc">Вынос мусора — 0 ₽. Пробуйте сервис без оплаты.</p>
-    <div class="price">0 ₽</div>
-    <button id="choose-free">Выбрать</button>
-  </div>
+    <!-- TAB: TARIFFS -->
+    <section id="tab-tariffs" class="hidden">
+      <div class="card">
+        <div class="title">Бесплатный запуск</div>
+        <p class="desc">Вынос мусора — 0 ₽. Пробуйте сервис без оплаты.</p>
+        <button data-plan="free" class="choose-plan">Выбрать «Бесплатный»</button>
+      </div>
+      <div class="card">
+        <div class="title">Плюс</div>
+        <p class="desc">Приоритетный выезд и напоминания.</p>
+        <button data-plan="plus" class="choose-plan">Выбрать «Плюс»</button>
+      </div>
+      <small>Оформление — в чате с ботом.</small>
+    </section>
 
-  <div class="card">
-    <div class="title">Плюс</div>
-    <p class="desc">Приоритетный выезд и напоминания.</p>
-    <div class="price">299 ₽/мес</div>
-    <button id="choose-plus">Выбрать</button>
-  </div>
+    <!-- TAB: ADDRESS -->
+    <section id="tab-address" class="hidden">
+      <div class="card">
+        <div class="title">Изменить адрес</div>
+        <div class="row"><input id="addr_city" placeholder="Город" /></div>
+        <div class="row"><input id="addr_street" placeholder="Улица" /></div>
+        <div class="row"><input id="addr_house" placeholder="Дом" /></div>
+        <div class="row"><input id="addr_flat" placeholder="Квартира" /></div>
+        <div class="row"><input id="addr_entrance" placeholder="Подъезд" /></div>
+        <div class="row"><input id="addr_floor" placeholder="Этаж" /></div>
+        <div class="row"><input id="addr_comment" placeholder="Комментарий для курьера" /></div>
+        <div style="height:8px"></div>
+        <button id="save-address">Сохранить адрес</button>
+      </div>
+      <small>Сохранённый адрес используется при заявках.</small>
+    </section>
 
-  <small>Оформление — в чате с ботом.</small>
+    <!-- TAB: PROFILE -->
+    <section id="tab-profile" class="hidden">
+      <div class="card">
+        <div class="title">Профиль</div>
+        <p class="desc">Нажмите, чтобы получить детали профиля в чате (имя, рефералка, адрес).</p>
+        <button id="load-profile">Показать профиль в чате</button>
+      </div>
+      <small>Мы отправим информацию через бота в ваш чат.</small>
+    </section>
+  </main>
 
-  <!-- Подключаем SDK Телеграма (закрывающий тег обязателен!) -->
+  <nav>
+    <button data-tab="request" class="active">🧺<span class="tab-label">Заявка</span></button>
+    <button data-tab="tariffs">💳<span class="tab-label">Тарифы</span></button>
+    <button data-tab="address">🏠<span class="tab-label">Адрес</span></button>
+    <button data-tab="profile">👤<span class="tab-label">Профиль</span></button>
+  </nav>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Подхватываем тему Телеграма
+    // Подхват темы Телеграма
     const tp = tg.themeParams || {};
-    if (tp.bg_color) document.documentElement.style.setProperty('--bg', tp.bg_color);
-    if (tp.text_color) document.documentElement.style.setProperty('--text', tp.text_color);
-    if (tp.secondary_bg_color) document.documentElement.style.setProperty('--card', tp.secondary_bg_color);
-    if (tp.button_color) document.documentElement.style.setProperty('--accent', tp.button_color);
+    const cssVars = {
+      '--bg': tp.bg_color,
+      '--text': tp.text_color,
+      '--card': tp.secondary_bg_color,
+      '--accent': tp.button_color,
+      '--line': tp.section_separator_color,
+      '--muted': tp.hint_color,
+    };
+    Object.entries(cssVars).forEach(([k,v])=>{ if(v) document.documentElement.style.setProperty(k,v); });
 
-    function send(action, payload){ tg.sendData(JSON.stringify({action, ...payload})); }
+    // Навигация по вкладкам
+    const titleEl = document.getElementById('title');
+    const tabs = ['request','tariffs','address','profile'];
+    function showTab(tab){
+      tabs.forEach(t => document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab));
+      document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+      const titles = {request:'Заявка', tariffs:'Тарифы', address:'Адрес', profile:'Профиль'};
+      titleEl.textContent = titles[tab] || 'Меню';
+    }
+    document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
-    document.getElementById('choose-free').onclick = () => send('pick_tariff', { plan: 'free' });
-    document.getElementById('choose-plus').onclick = () => send('pick_tariff', { plan: 'plus' });
+    // Поддержка прямого открытия нужной вкладки через ?tab=
+    const params = new URLSearchParams(location.search);
+    const initialTab = params.get('tab');
+    showTab(tabs.includes(initialTab)?initialTab:'request');
+
+    // Отправка данных боту (без отдельного бэка)
+    function send(action, payload){
+      tg.sendData(JSON.stringify({ action, ...payload }));
+    }
+
+    // Заявка
+    document.getElementById('send-request').onclick = () => {
+      const bags = parseInt(document.getElementById('bags').value,10) || 1;
+      send('submit_request', { bags });
+      tg.showPopup({ title:'Заявка отправлена', message:`Пакетов: ${bags}. Подтверждение придёт в чат.`, buttons:[{type:'close'}] });
+    };
+
+    // Выбор тарифа
+    document.querySelectorAll('.choose-plan').forEach(btn => btn.onclick = () => {
+      send('pick_tariff', { plan: btn.dataset.plan });
+      tg.showPopup({ title:'Тариф выбран', message:`Вы выбрали тариф: ${btn.dataset.plan}`, buttons:[{type:'close'}] });
+    });
+
+    // Изменение адреса
+    document.getElementById('save-address').onclick = () => {
+      const data = {
+        city: document.getElementById('addr_city').value.trim(),
+        street: document.getElementById('addr_street').value.trim(),
+        house: document.getElementById('addr_house').value.trim(),
+        flat: document.getElementById('addr_flat').value.trim(),
+        entrance: document.getElementById('addr_entrance').value.trim(),
+        floor: document.getElementById('addr_floor').value.trim(),
+        comment: document.getElementById('addr_comment').value.trim(),
+      };
+      send('edit_address', data);
+      tg.showPopup({ title:'Адрес сохранён', message:'Мы обновили ваш адрес. Подтверждение — в чате.', buttons:[{type:'close'}] });
+    };
+
+    // Профиль — запросить данные в чат
+    document.getElementById('load-profile').onclick = () => {
+      send('get_profile', {});
+      tg.showPopup({ title:'Профиль', message:'Отправили данные профиля в ваш чат.', buttons:[{type:'close'}] });
+    };
   </script>
 </body>
 </html>
