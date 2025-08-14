@@ -1,4 +1,4 @@
-<!doctype html>
+k<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -16,6 +16,7 @@
       --btn:#2a2d34;
       --ok:#1d7e3a;
       --danger:#7e1d1d;
+      --warn:#7e5d1d;
     }
     * { box-sizing:border-box; }
     html, body { height:100%; }
@@ -29,6 +30,7 @@
     .btn:active { transform: translateY(1px); }
     .btn.ok { background:var(--ok); }
     .btn.danger { background:var(--danger); }
+    .btn.warn { background:var(--warn); }
     .row { display:flex; gap:10px; }
     .row > .btn { flex:1; }
     .input, .select, .textarea {
@@ -66,6 +68,11 @@
         <p><b>0 ₽</b> за вынос. Помогите нам вырасти — расскажите друзьям ❤️</p>
         <button class="btn" onclick="openTab('tariffs')">Подробнее о тарифах</button>
       </div>
+      <div id="tg-warning" class="card hidden">
+        <h2 class="h2">⚠ Откройте через бота</h2>
+        <p class="muted">Похоже, мини-приложение открыто в браузере. Чтобы отправить заявку, откройте его из чата с ботом.</p>
+        <button class="btn warn" onclick="location.reload()">Проверить снова</button>
+      </div>
     </section>
 
     <!-- REQUEST -->
@@ -90,7 +97,7 @@
       <label class="muted">Комментарий (необязательно)</label>
       <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
 
-      <button class="btn ok" onclick="sendRequest()">Отправить заявку</button>
+      <button id="send-request-btn" class="btn ok" onclick="sendRequest()">Отправить заявку</button>
     </section>
 
     <!-- REQUEST SUCCESS -->
@@ -142,12 +149,16 @@
 
   <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.expand();
-      tg.setBackgroundColor("#0e0f12");
-      tg.setHeaderColor("#0e0f12");
-      tg.ready();
-    }
+
+    // Инициализация Telegram WebApp
+    (function initTG() {
+      try {
+        tg?.expand();
+        tg?.setBackgroundColor?.("#0e0f12");
+        tg?.setHeaderColor?.("#0e0f12");
+        tg?.ready?.();
+      } catch(e) {}
+    })();
 
     function qs(id){ return document.getElementById(id); }
     function show(id){ qs(id).classList.remove('hidden'); }
@@ -193,8 +204,20 @@
       qs('pphone').textContent = p.phone || "—";
     }
 
-    function sendRequest(){
-      const bags = parseInt(qs('bags').value || "1", 10);
+    function guardOpenedFromBot(){
+      const ok = !!(tg && (tg.initDataUnsafe?.user || tg.initData));
+      // Покажем предупреждение в меню, если запущено в браузере
+      qs('tg-warning').classList.toggle('hidden', ok);
+      return ok;
+    }
+
+    async function sendRequest(){
+      const btn = qs('send-request-btn');
+      const isFromBot = guardOpenedFromBot();
+
+      const bagsVal = parseInt(qs('bags').value || "1", 10);
+      const bags = Number.isFinite(bagsVal) && bagsVal > 0 ? bagsVal : 1;
+
       const time = (qs('time').value || "").trim();
       const door = (qs('door').value || "").trim();
       const comment = (qs('comment').value || "").trim();
@@ -205,15 +228,30 @@
         comment: [time, door, comment].filter(Boolean).join("; ")
       };
 
-      try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
-      try { tg?.sendData?.(JSON.stringify(payload)); } catch(e){}
+      console.log("[UDVERI] sendRequest payload:", payload, "openedFromBot:", isFromBot);
 
-      openTab('success');
+      // Хаптик и защита от двойного клика
+      try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
+      btn.disabled = true;
+      setTimeout(()=>{ btn.disabled = false; }, 1200);
+
+      try {
+        if (!isFromBot) {
+          alert("Откройте мини-приложение из бота в Telegram, чтобы отправить заявку.");
+          return;
+        }
+        tg?.sendData?.(JSON.stringify(payload));
+        openTab('success');
+      } catch(e){
+        console.warn("sendData error:", e);
+        alert("Не удалось отправить заявку. Попробуйте открыть мини-приложение из бота.");
+      }
     }
 
     const { payload, fromTab } = decodePayload();
     fillProfile(payload);
     openTab(fromTab || payload.tab || "menu");
+    guardOpenedFromBot();
   </script>
 </body>
 </html>
