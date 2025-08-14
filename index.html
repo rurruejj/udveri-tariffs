@@ -1,176 +1,233 @@
-<!doctype html>
+k<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>У Двери — мини‑приложение</title>
+  <title>UDVERI — мини-приложение</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
   <style>
-    :root { --bg:#fff; --text:#111; --card:#f6f6f6; --muted:#8b8b8b; --accent:#16a34a; --line:#e5e5e5; }
-    *{box-sizing:border-box}
-    body{margin:0;padding:0;font-family:-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    header{position:sticky;top:0;background:var(--bg);padding:14px 16px;border-bottom:1px solid var(--line);z-index:10}
-    h1{margin:0;font-size:18px}
-    main{padding:16px}
-    .hidden{display:none}
-    .card{background:var(--card);border-radius:14px;padding:14px;margin:12px 0}
-    .title{font-weight:700;margin-bottom:6px}
-    .desc{opacity:.9;margin:0 0 10px}
-    .row{display:flex;gap:8px}
-    input,select{width:100%;padding:12px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff}
-    button{width:100%;padding:12px 14px;border:0;border-radius:12px;font-size:16px;cursor:pointer;background:var(--accent);color:#fff}
-    small{opacity:.7}
+    :root {
+      --bg: #0e0f12;
+      --bg2:#111318;
+      --card:#15171c;
+      --line:#23262d;
+      --text:#ffffff;
+      --muted:#a7adb7;
+      --btn:#2a2d34;
+      --ok:#1d7e3a;
+      --danger:#7e1d1d;
+    }
+    * { box-sizing:border-box; }
+    html, body { height:100%; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:var(--bg); color:var(--text); }
+    .container { padding: 16px 16px 88px; max-width: 720px; margin: 0 auto; }
+    .hidden { display:none; }
+    .h2 { font-size:20px; margin:0 0 12px; font-weight:600; }
+    .muted { color:var(--muted); font-size:14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin:12px 0; }
+    .btn { display:block; width:100%; padding:14px 16px; border-radius:14px; border:0; background:var(--btn); color:var(--text); font-size:16px; cursor:pointer; }
+    .btn:active { transform: translateY(1px); }
+    .btn.ok { background:var(--ok); }
+    .btn.danger { background:var(--danger); }
+    .row { display:flex; gap:10px; }
+    .row > .btn { flex:1; }
+    .input, .select, .textarea {
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+      background:#1a1c22; color:var(--text); margin:8px 0 16px; font-size:15px;
+    }
+    .textarea { resize:vertical; min-height:90px; }
+    .kvs { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
 
-    /* Табы снизу */
-    nav{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);display:flex}
-    nav button{flex:1;background:transparent;color:inherit;border-radius:0;padding:12px 6px}
-    nav button.active{border-top:3px solid var(--accent);}
-    .tab-label{display:block;font-size:12px;color:var(--muted)}
+    /* bottom tabs */
+    .tabs {
+      position:fixed; left:0; right:0; bottom:0; height:72px;
+      background:var(--bg2); border-top:1px solid var(--line);
+      display:flex; justify-content:space-around; align-items:center; padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    }
+    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; }
+    .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
+    .tabbtn.active { color:#fff; }
   </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <header><h1 id="title">Заявка</h1></header>
-  <main>
-    <!-- TAB: REQUEST -->
-    <section id="tab-request">
+  <div class="container">
+    <!-- MENU -->
+    <section id="tab-menu">
+      <h2 class="h2">Меню</h2>
       <div class="card">
-        <div class="title">Оставить заявку</div>
-        <p class="desc">Выберите количество пакетов и отправьте заявку. Курьер заберёт мусор у двери.</p>
+        <p class="muted">Быстрые действия:</p>
         <div class="row">
-          <select id="bags">
-            <option value="1">1 пакет</option>
-            <option value="2" selected>2 пакета</option>
-            <option value="3">3 пакета</option>
-            <option value="4">4 пакета</option>
-            <option value="5">5 пакетов</option>
-          </select>
+          <button class="btn" onclick="openTab('request')">Оставить заявку</button>
+          <button class="btn" onclick="openTab('profile')">Профиль</button>
         </div>
-        <div style="height:8px"></div>
-        <button id="send-request">Отправить заявку</button>
       </div>
-      <small>После отправки бот подтвердит заявку в чате.</small>
+      <div class="card">
+        <p class="muted">Тарифы сейчас</p>
+        <p><b>0 ₽</b> за вынос. Помогите нам вырасти — расскажите друзьям ❤️</p>
+        <button class="btn" onclick="openTab('tariffs')">Подробнее о тарифах</button>
+      </div>
     </section>
 
-    <!-- TAB: TARIFFS -->
+    <!-- REQUEST -->
+    <section id="tab-request" class="hidden">
+      <h2 class="h2">Заявка на вынос</h2>
+      <label class="muted">Сколько пакетов</label>
+      <select id="bags" class="select">
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+      </select>
+
+      <div class="kvs">
+        <div>
+          <label class="muted">Время (необязательно)</label>
+          <input id="time" class="input" type="text" placeholder="Напр.: сегодня к 20:00" />
+        </div>
+        <div>
+          <label class="muted">Подъезд/домофон (необязательно)</label>
+          <input id="door" class="input" type="text" placeholder="Код 1234#" />
+        </div>
+      </div>
+
+      <label class="muted">Комментарий (необязательно)</label>
+      <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
+
+      <button class="btn ok" onclick="sendRequest()">Отправить заявку</button>
+    </section>
+
+    <!-- REQUEST SUCCESS -->
+    <section id="tab-success" class="hidden">
+      <div class="card">
+        <h2 class="h2">✅ Заявка отправлена</h2>
+        <p class="muted">Мы прислали подтверждение в чат. Можете вернуться в меню или оформить новую заявку.</p>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="openTab('menu')">В меню</button>
+        <button class="btn" onclick="openTab('request')">Новая заявка</button>
+      </div>
+    </section>
+
+    <!-- TARIFFS -->
     <section id="tab-tariffs" class="hidden">
+      <h2 class="h2">Тарифы</h2>
       <div class="card">
-        <div class="title">Бесплатный запуск</div>
-        <p class="desc">Вынос мусора — 0 ₽. Пробуйте сервис без оплаты.</p>
-        <button data-plan="free" class="choose-plan">Выбрать «Бесплатный»</button>
+        <p>Промо-стоимость: <b>0 ₽</b>.</p>
+        <p class="muted">Сервис в запуске, собираем базу клиентов. Спасибо, что с нами!</p>
       </div>
-      <div class="card">
-        <div class="title">Плюс</div>
-        <p class="desc">Приоритетный выезд и напоминания.</p>
-        <button data-plan="plus" class="choose-plan">Выбрать «Плюс»</button>
-      </div>
-      <small>Оформление — в чате с ботом.</small>
+      <button class="btn" onclick="openTab('menu')">Вернуться в меню</button>
     </section>
 
-    <!-- TAB: ADDRESS -->
-    <section id="tab-address" class="hidden">
-      <div class="card">
-        <div class="title">Изменить адрес</div>
-        <div class="row"><input id="addr_city" placeholder="Город" /></div>
-        <div class="row"><input id="addr_street" placeholder="Улица" /></div>
-        <div class="row"><input id="addr_house" placeholder="Дом" /></div>
-        <div class="row"><input id="addr_flat" placeholder="Квартира" /></div>
-        <div class="row"><input id="addr_entrance" placeholder="Подъезд" /></div>
-        <div class="row"><input id="addr_floor" placeholder="Этаж" /></div>
-        <div class="row"><input id="addr_comment" placeholder="Комментарий для курьера" /></div>
-        <div style="height:8px"></div>
-        <button id="save-address">Сохранить адрес</button>
-      </div>
-      <small>Сохранённый адрес используется при заявках.</small>
-    </section>
-
-    <!-- TAB: PROFILE -->
+    <!-- PROFILE -->
     <section id="tab-profile" class="hidden">
+      <h2 class="h2">Профиль</h2>
       <div class="card">
-        <div class="title">Профиль</div>
-        <p class="desc">Нажмите, чтобы получить детали профиля в чате (имя, рефералка, адрес).</p>
-        <button id="load-profile">Показать профиль в чате</button>
-      </div>
-      <small>Мы отправим информацию через бота в ваш чат.</small>
-    </section>
-  </main>
+        <div class="muted">Имя</div>
+        <div id="pname">—</div>
 
-  <nav>
-    <button data-tab="request" class="active">🧺<span class="tab-label">Заявка</span></button>
-    <button data-tab="tariffs">💳<span class="tab-label">Тарифы</span></button>
-    <button data-tab="address">🏠<span class="tab-label">Адрес</span></button>
-    <button data-tab="profile">👤<span class="tab-label">Профиль</span></button>
+        <div class="muted" style="margin-top:12px">Адрес</div>
+        <div id="paddr">—</div>
+
+        <div class="muted" style="margin-top:12px">Телефон</div>
+        <div id="pphone">—</div>
+      </div>
+      <button class="btn" onclick="openTab('menu')">В меню</button>
+    </section>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav class="tabs">
+    <div id="btn-menu"    class="tabbtn" onclick="openTab('menu')"><b>🏠</b>Меню</div>
+    <div id="btn-request" class="tabbtn" onclick="openTab('request')"><b>🧺</b>Заявка</div>
+    <div id="btn-tariffs" class="tabbtn" onclick="openTab('tariffs')"><b>💳</b>Тарифы</div>
+    <div id="btn-profile" class="tabbtn" onclick="openTab('profile')"><b>👤</b>Профиль</div>
   </nav>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script>
-    const tg = window.Telegram.WebApp;
+<script>
+  // --- Telegram init ---
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
     tg.expand();
+    tg.setBackgroundColor("#0e0f12");
+    tg.setHeaderColor("#0e0f12");
+    tg.ready();
+  }
 
-    // Подхват темы Телеграма
-    const tp = tg.themeParams || {};
-    const cssVars = {
-      '--bg': tp.bg_color,
-      '--text': tp.text_color,
-      '--card': tp.secondary_bg_color,
-      '--accent': tp.button_color,
-      '--line': tp.section_separator_color,
-      '--muted': tp.hint_color,
-    };
-    Object.entries(cssVars).forEach(([k,v])=>{ if(v) document.documentElement.style.setProperty(k,v); });
+  // --- Helpers ---
+  function qs(id){ return document.getElementById(id); }
+  function show(id){ qs(id).classList.remove('hidden'); }
+  function hide(id){ qs(id).classList.add('hidden'); }
 
-    // Навигация по вкладкам
-    const titleEl = document.getElementById('title');
-    const tabs = ['request','tariffs','address','profile'];
-    function showTab(tab){
-      tabs.forEach(t => document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab));
-      document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-      const titles = {request:'Заявка', tariffs:'Тарифы', address:'Адрес', profile:'Профиль'};
-      titleEl.textContent = titles[tab] || 'Меню';
-    }
-    document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-
-    // Поддержка прямого открытия нужной вкладки через ?tab=
-    const params = new URLSearchParams(location.search);
-    const initialTab = params.get('tab');
-    showTab(tabs.includes(initialTab)?initialTab:'request');
-
-    // Отправка данных боту (без отдельного бэка)
-    function send(action, payload){
-      tg.sendData(JSON.stringify({ action, ...payload }));
-    }
-
-    // Заявка
-    document.getElementById('send-request').onclick = () => {
-      const bags = parseInt(document.getElementById('bags').value,10) || 1;
-      send('submit_request', { bags });
-      tg.showPopup({ title:'Заявка отправлена', message:`Пакетов: ${bags}. Подтверждение придёт в чат.`, buttons:[{type:'close'}] });
-    };
-
-    // Выбор тарифа
-    document.querySelectorAll('.choose-plan').forEach(btn => btn.onclick = () => {
-      send('pick_tariff', { plan: btn.dataset.plan });
-      tg.showPopup({ title:'Тариф выбран', message:`Вы выбрали тариф: ${btn.dataset.plan}`, buttons:[{type:'close'}] });
+  const tabs = ["menu","request","success","tariffs","profile"];
+  function openTab(tab){
+    tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
+    ['menu','request','tariffs','profile'].forEach(t=>{
+      const el = qs('btn-'+t);
+      if (!el) return;
+      el.classList.toggle('active', t===tab);
     });
+    // поддерживаем URL-параметр ?tab=
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, "", url.toString());
+  }
 
-    // Изменение адреса
-    document.getElementById('save-address').onclick = () => {
-      const data = {
-        city: document.getElementById('addr_city').value.trim(),
-        street: document.getElementById('addr_street').value.trim(),
-        house: document.getElementById('addr_house').value.trim(),
-        flat: document.getElementById('addr_flat').value.trim(),
-        entrance: document.getElementById('addr_entrance').value.trim(),
-        floor: document.getElementById('addr_floor').value.trim(),
-        comment: document.getElementById('addr_comment').value.trim(),
-      };
-      send('edit_address', data);
-      tg.showPopup({ title:'Адрес сохранён', message:'Мы обновили ваш адрес. Подтверждение — в чате.', buttons:[{type:'close'}] });
+  // base64url → json
+  function decodePayload() {
+    const url = new URL(window.location.href);
+    const p = url.searchParams.get('p');
+    const fromTab = url.searchParams.get('tab') || undefined;
+    let payload = {};
+    if (p) {
+      try {
+        const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
+        const json = decodeURIComponent(escape(window.atob(b64)));
+        payload = JSON.parse(json);
+      } catch(e) { /* ignore */ }
+    }
+    return { payload, fromTab };
+  }
+
+  function fillProfile(p){
+    qs('pname').textContent = p.first_name || "—";
+    const parts = [];
+    if (p.street) parts.push(p.street);
+    if (p.house) parts.push('д. '+p.house);
+    if (p.flat) parts.push('кв. '+p.flat);
+    if (p.entrance) parts.push('подъезд '+p.entrance);
+    if (p.floor) parts.push('этаж '+p.floor);
+    qs('paddr').textContent = parts.length ? parts.join(', ') : "—";
+    qs('pphone').textContent = p.phone || "—";
+  }
+
+  function sendRequest(){
+    const bags = parseInt(qs('bags').value || "1", 10);
+    const time = (qs('time').value || "").trim();
+    const door = (qs('door').value || "").trim();
+    const comment = (qs('comment').value || "").trim();
+
+    const payload = {
+      type: "create_request",
+      bags,
+      comment: [time, door, comment].filter(Boolean).join("; ")
     };
 
-    // Профиль — запросить данные в чат
-    document.getElementById('load-profile').onclick = () => {
-      send('get_profile', {});
-      tg.showPopup({ title:'Профиль', message:'Отправили данные профиля в ваш чат.', buttons:[{type:'close'}] });
-    };
-  </script>
+    try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
+    try { tg?.sendData?.(JSON.stringify(payload)); } catch(e){}
+
+    // мгновенное UX-подтверждение: показываем экран успеха
+    openTab('success');
+
+    // очистка формы (по желанию)
+    // qs('bags').value = "1";
+    // qs('time').value = "";
+    // qs('door').value = "";
+    // qs('comment').value = "";
+  }
+
+  // --- Init ---
+  const { payload, fromTab } = decodePayload();
+  fillProfile(payload);
+  openTab(fromTab || payload.tab || "menu");
+</script>
 </body>
 </html>
+
