@@ -5,29 +5,150 @@
   <title>UDVERI — мини-приложение</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* (весь твой CSS остаётся без изменений) */
+    :root {
+      --bg: #0e0f12;
+      --bg2:#111318;
+      --card:#15171c;
+      --line:#23262d;
+      --text:#ffffff;
+      --muted:#a7adb7;
+      --btn:#2a2d34;
+      --ok:#1d7e3a;
+      --danger:#7e1d1d;
+    }
+    * { box-sizing:border-box; }
+    html, body { height:100%; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:var(--bg); color:var(--text); }
+    .container { padding: 16px 16px 88px; max-width: 720px; margin: 0 auto; }
+    .hidden { display:none; }
+    .h2 { font-size:20px; margin:0 0 12px; font-weight:600; }
+    .muted { color:var(--muted); font-size:14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin:12px 0; }
+    .btn { display:block; width:100%; padding:14px 16px; border-radius:14px; border:0; background:var(--btn); color:var(--text); font-size:16px; cursor:pointer; }
+    .btn:active { transform: translateY(1px); }
+    .btn.ok { background:var(--ok); }
+    .btn.danger { background:var(--danger); }
+    .row { display:flex; gap:10px; }
+    .row > .btn { flex:1; }
+    .input, .select, .textarea {
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+      background:#1a1c22; color:var(--text); margin:8px 0 16px; font-size:15px;
+    }
+    .textarea { resize:vertical; min-height:90px; }
+    .kvs { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+    .tabs {
+      position:fixed; left:0; right:0; bottom:0; height:72px;
+      background:var(--bg2); border-top:1px solid var(--line);
+      display:flex; justify-content:space-around; align-items:center; padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    }
+    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; }
+    .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
+    .tabbtn.active { color:#fff; }
   </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <div class="container">
-    <!-- Твои секции: tab-menu, tab-request и т.д. -->
-    <!-- ... -->
+    <!-- MENU -->
+    <section id="tab-menu">
+      <h2 class="h2">Меню</h2>
+      <div class="card">
+        <p class="muted">Быстрые действия:</p>
+        <div class="row">
+          <button class="btn" onclick="openTab('request')">Оставить заявку</button>
+          <button class="btn" onclick="openTab('profile')">Профиль</button>
+        </div>
+      </div>
+      <div class="card">
+        <p class="muted">Тарифы сейчас</p>
+        <p><b>0 ₽</b> за вынос. Помогите нам вырасти — расскажите друзьям ❤️</p>
+        <button class="btn" onclick="openTab('tariffs')">Подробнее о тарифах</button>
+      </div>
+    </section>
 
-    <!-- Кнопка "Отправить заявку" -->
-    <button class="btn ok" onclick="sendRequest()">Отправить заявку</button>
+    <!-- REQUEST -->
+    <section id="tab-request" class="hidden">
+      <h2 class="h2">Заявка на вынос</h2>
+      <label class="muted">Сколько пакетов</label>
+      <select id="bags" class="select">
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+      </select>
+
+      <div class="kvs">
+        <div>
+          <label class="muted">Время (необязательно)</label>
+          <input id="time" class="input" type="text" placeholder="Напр.: сегодня к 20:00" />
+        </div>
+        <div>
+          <label class="muted">Подъезд/домофон (необязательно)</label>
+          <input id="door" class="input" type="text" placeholder="Код 1234#" />
+        </div>
+      </div>
+
+      <label class="muted">Комментарий (необязательно)</label>
+      <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
+
+      <button class="btn ok" onclick="sendRequest()">Отправить заявку</button>
+    </section>
+
+    <!-- REQUEST SUCCESS -->
+    <section id="tab-success" class="hidden">
+      <div class="card">
+        <h2 class="h2">✅ Заявка отправлена</h2>
+        <p class="muted">Мы прислали подтверждение в чат. Можете вернуться в меню или оформить новую заявку.</p>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="openTab('menu')">В меню</button>
+        <button class="btn" onclick="openTab('request')">Новая заявка</button>
+      </div>
+    </section>
+
+    <!-- TARIFFS -->
+    <section id="tab-tariffs" class="hidden">
+      <h2 class="h2">Тарифы</h2>
+      <div class="card">
+        <p>Промо-стоимость: <b>0 ₽</b>.</p>
+        <p class="muted">Сервис в запуске, собираем базу клиентов. Спасибо, что с нами!</p>
+      </div>
+      <button class="btn" onclick="openTab('menu')">Вернуться в меню</button>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="tab-profile" class="hidden">
+      <h2 class="h2">Профиль</h2>
+      <div class="card">
+        <div class="muted">Имя</div>
+        <div id="pname">—</div>
+
+        <div class="muted" style="margin-top:12px">Адрес</div>
+        <div id="paddr">—</div>
+
+        <div class="muted" style="margin-top:12px">Телефон</div>
+        <div id="pphone">—</div>
+      </div>
+      <button class="btn" onclick="openTab('menu')">В меню</button>
+    </section>
   </div>
 
-  <script>
-    // Telegram WebApp init
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    tg.setBackgroundColor("#0e0f12");
-    tg.setHeaderColor("#0e0f12");
+  <!-- Bottom navigation -->
+  <nav class="tabs">
+    <div id="btn-menu"    class="tabbtn" onclick="openTab('menu')"><b>🏠</b>Меню</div>
+    <div id="btn-request" class="tabbtn" onclick="openTab('request')"><b>🧺</b>Заявка</div>
+    <div id="btn-tariffs" class="tabbtn" onclick="openTab('tariffs')"><b>💳</b>Тарифы</div>
+    <div id="btn-profile" class="tabbtn" onclick="openTab('profile')"><b>👤</b>Профиль</div>
+  </nav>
 
-    // --- Helpers ---
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.setBackgroundColor("#0e0f12");
+      tg.setHeaderColor("#0e0f12");
+      tg.ready();
+    }
+
     function qs(id){ return document.getElementById(id); }
     function show(id){ qs(id).classList.remove('hidden'); }
     function hide(id){ qs(id).classList.add('hidden'); }
@@ -35,7 +156,7 @@
     const tabs = ["menu","request","success","tariffs","profile"];
     function openTab(tab){
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
-      ['menu','request','tariffs','profile'].forEach(t => {
+      ['menu','request','tariffs','profile'].forEach(t=>{
         const el = qs('btn-'+t);
         if (!el) return;
         el.classList.toggle('active', t===tab);
@@ -73,10 +194,10 @@
     }
 
     function sendRequest(){
-      const bags = parseInt(qs('bags')?.value || "1", 10);
-      const time = (qs('time')?.value || "").trim();
-      const door = (qs('door')?.value || "").trim();
-      const comment = (qs('comment')?.value || "").trim();
+      const bags = parseInt(qs('bags').value || "1", 10);
+      const time = (qs('time').value || "").trim();
+      const door = (qs('door').value || "").trim();
+      const comment = (qs('comment').value || "").trim();
 
       const payload = {
         type: "create_request",
@@ -84,17 +205,12 @@
         comment: [time, door, comment].filter(Boolean).join("; ")
       };
 
-      try {
-        tg.HapticFeedback?.impactOccurred("medium");
-        tg.sendData(JSON.stringify(payload));
-      } catch(e) {
-        console.error("Ошибка отправки WebAppData:", e);
-      }
+      try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
+      try { tg?.sendData?.(JSON.stringify(payload)); } catch(e){}
 
-      openTab("success");
+      openTab('success');
     }
 
-    // --- Init ---
     const { payload, fromTab } = decodePayload();
     fillProfile(payload);
     openTab(fromTab || payload.tab || "menu");
