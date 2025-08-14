@@ -98,6 +98,8 @@
       <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
 
       <button id="send-request-btn" class="btn ok" onclick="sendRequest()">Отправить заявку</button>
+      <!-- Тестовая кнопка для жёсткой диагностики -->
+      <button class="btn" style="margin-top:10px" onclick="sendTest()">Тестовая отправка (PING)</button>
     </section>
 
     <!-- REQUEST SUCCESS -->
@@ -204,9 +206,12 @@
       qs('pphone').textContent = p.phone || "—";
     }
 
+    function openedFromBot() {
+      return !!(tg && (tg.initDataUnsafe?.user || tg.initData));
+    }
+
     function guardOpenedFromBot(){
-      const ok = !!(tg && (tg.initDataUnsafe?.user || tg.initData));
-      // Покажем предупреждение в меню, если запущено в браузере
+      const ok = openedFromBot();
       qs('tg-warning').classList.toggle('hidden', ok);
       return ok;
     }
@@ -230,7 +235,6 @@
 
       console.log("[UDVERI] sendRequest payload:", payload, "openedFromBot:", isFromBot);
 
-      // Хаптик и защита от двойного клика
       try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
       btn.disabled = true;
       setTimeout(()=>{ btn.disabled = false; }, 1200);
@@ -245,6 +249,21 @@
       } catch(e){
         console.warn("sendData error:", e);
         alert("Не удалось отправить заявку. Попробуйте открыть мини-приложение из бота.");
+      }
+    }
+
+    // Тестовая отправка — для диагностики
+    function sendTest() {
+      const ok = openedFromBot();
+      console.log("[TEST] openedFromBot =", ok);
+      try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
+      if (!ok) { alert("Откройте мини-апп из бота!"); return; }
+      try {
+        tg?.sendData?.(JSON.stringify({ ping: "PING", t: Date.now() }));
+        alert("Тест отправлен (PING)");
+      } catch(e) {
+        console.warn("sendData error:", e);
+        alert("Не удалось отправить тест. Откройте мини-апп из бота.");
       }
     }
 
