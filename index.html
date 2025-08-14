@@ -98,7 +98,6 @@
       <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
 
       <button id="send-request-btn" class="btn ok" onclick="sendRequest()">Отправить заявку</button>
-      <!-- Тестовая кнопка для жёсткой диагностики -->
       <button class="btn" style="margin-top:10px" onclick="sendTest()">Тестовая отправка (PING)</button>
     </section>
 
@@ -152,7 +151,7 @@
   <script>
     const tg = window.Telegram?.WebApp;
 
-    // Инициализация Telegram WebApp
+    // Инициализация Telegram WebApp + явная проверка initData
     (function initTG() {
       try {
         tg?.expand();
@@ -160,6 +159,9 @@
         tg?.setHeaderColor?.("#0e0f12");
         tg?.ready?.();
       } catch(e) {}
+      console.log("[TG] initData:", tg?.initData);
+      console.log("[TG] user:", tg?.initDataUnsafe?.user);
+      alert("initData exists: " + (!!tg?.initData));
     })();
 
     function qs(id){ return document.getElementById(id); }
@@ -248,7 +250,7 @@
         openTab('success');
       } catch(e){
         console.warn("sendData error:", e);
-        alert("Не удалось отправить заявку. Попробуйте открыть мини-приложение из бота.");
+        alert("Не удалось отправить заявку. Откройте мини-приложение из бота.");
       }
     }
 
