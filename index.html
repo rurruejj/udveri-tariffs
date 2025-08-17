@@ -206,34 +206,28 @@
       const comment = (qs('comment').value || "").trim();
 
       const payload = {
-        type: "create_request",
         bags,
         comment: [time, door, comment].filter(Boolean).join("; ")
       };
 
-      // 🔥 DEBUG
-      console.log("DEBUG tg:", tg);
-      console.log("DEBUG tg.initData:", tg?.initData);
-      console.log("DEBUG payload:", payload);
-      alert("tg.initData: " + tg?.initData);
+      status.textContent = "⏳ Отправляем заявку…";
 
-      if (!tg || !tg.initData) {
-        alert("Откройте мини-апп кнопкой в сообщении бота. Иначе заявка не уйдёт.");
-        console.log("tg or initData missing", tg);
-        status.textContent = "❌ Мини-апп открыт не из Telegram. Откройте через бота.";
-        return;
-      }
-
-      try { tg?.HapticFeedback?.impactOccurred?.("medium"); } catch(e){}
-      try {
-        tg.sendData(JSON.stringify(payload));
-        status.textContent = "⏳ Отправляем заявку…";
-        setTimeout(()=>{ status.textContent = "Если окно не закрылось само — заявка могла не уйти."; }, 1500);
-        setTimeout(()=>{ try { tg.close(); } catch(e){} openTab('success'); }, 300);
-      } catch(e){
-        console.error("sendData error:", e);
+      fetch("/api/awq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: tg?.initData, ...payload })
+      })
+      .then(r => r.json())
+      .then(data => {
+        console.log("Ответ API:", data);
+        status.textContent = "✅ Заявка отправлена!";
+        openTab('success');
+        setTimeout(()=>{ try { tg.close(); } catch(e){} }, 500);
+      })
+      .catch(err => {
+        console.error("Ошибка API:", err);
         status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
-      }
+      });
     }
 
     const { payload, fromTab } = decodePayload();
