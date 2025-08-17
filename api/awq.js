@@ -1,41 +1,55 @@
+// api/awq.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Method Not Allowed" });
+  }
 
   try {
-    const { query_id, result, admin_payload } = req.body || {};
-    if (!query_id || !result) {
-      return res.status(400).json({ ok: false, error: "bad args" });
+    const { initData, comment, bags } = req.body;
+
+    if (!initData) {
+      return res.status(400).json({ ok: false, error: "initData is required" });
     }
 
-    const token = process.env.BOT_TOKEN;
-    const adminId = process.env.ADMIN_ID;
+    // Твой Telegram токен и admin_id должны быть в переменных окружения Vercel
+    const BOT_TOKEN = process.env.BOT_TOKEN;
+    const ADMIN_ID = process.env.ADMIN_ID;
 
-    const api = (method, body) =>
-      fetch(`https://api.telegram.org/bot${token}/${method}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+    if (!BOT_TOKEN || !ADMIN_ID) {
+      return res.status(500).json({ ok: false, error: "BOT_TOKEN or ADMIN_ID missing" });
+    }
 
-    const r1 = await api("answerWebAppQuery", {
-      web_app_query_id: query_id,
-      result
+    // Формируем сообщение
+    const text = `
+📝 Новая заявка!
+InitData: ${initData}
+Комментарий: ${comment || "—"}
+Кол-во сумок: ${bags || "—"}
+`;
+
+    // Отправляем в Telegram
+    const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const tgResponse = await fetch(telegramUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: ADMIN_ID,
+        text,
+        parse_mode: "HTML"
+      }),
     });
-    const j1 = await r1.json();
-    if (!j1.ok) throw new Error("answerWebAppQuery failed: " + JSON.stringify(j1));
 
-    if (adminId) {
-      const text =
-        `🧺 <b>Заявка</b>\n` +
-        `Пакеты: <b>${admin_payload?.bags ?? "—"}</b>\n` +
-        `Комментарий: ${admin_payload?.comment?.trim() || "—"}`;
-      await api("sendMessage", { chat_id: adminId, text, parse_mode: "HTML" });
+    const tgResult = await tgResponse.json();
+
+    if (!tgResult.ok) {
+      return res.status(500).json({ ok: false, error: tgResult.description });
     }
 
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false, error: String(e) });
+    return res.status(200).json({ ok: true, result: tgResult });
+
+  } catch (err) {
+    console.error("Error in /api/awq:", err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 }
 
