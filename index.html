@@ -166,7 +166,6 @@
       url.searchParams.set('tab', tab);
       window.history.replaceState({}, "", url.toString());
 
-      // 🔔 при открытии ПРОФИЛЯ — тестовый пинг в бота
       if (tab === 'profile' && tg && tg.initData) {
         try { tg.sendData(JSON.stringify({ type: "ping_profile" })); } catch(e){ console.log(e); }
       }
@@ -212,6 +211,12 @@
         comment: [time, door, comment].filter(Boolean).join("; ")
       };
 
+      // 🔥 DEBUG
+      console.log("DEBUG tg:", tg);
+      console.log("DEBUG tg.initData:", tg?.initData);
+      console.log("DEBUG payload:", payload);
+      alert("tg.initData: " + tg?.initData);
+
       if (!tg || !tg.initData) {
         alert("Откройте мини-апп кнопкой в сообщении бота. Иначе заявка не уйдёт.");
         console.log("tg or initData missing", tg);
@@ -224,7 +229,6 @@
         tg.sendData(JSON.stringify(payload));
         status.textContent = "⏳ Отправляем заявку…";
         setTimeout(()=>{ status.textContent = "Если окно не закрылось само — заявка могла не уйти."; }, 1500);
-        // можно закрыть окно сразу — по UX лучше показать success
         setTimeout(()=>{ try { tg.close(); } catch(e){} openTab('success'); }, 300);
       } catch(e){
         console.error("sendData error:", e);
