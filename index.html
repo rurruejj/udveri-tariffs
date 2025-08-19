@@ -166,8 +166,11 @@
       url.searchParams.set('tab', tab);
       window.history.replaceState({}, "", url.toString());
 
-      if (tab === 'profile' && tg && tg.initData) {
-        try { tg.sendData(JSON.stringify({ type: "ping_profile" })); } catch(e){ console.log(e); }
+      if (tab === 'profile' && tg && tg.initDataUnsafe?.user) {
+        const user = tg.initDataUnsafe.user;
+        qs('pname').textContent = user.first_name + (user.last_name ? " " + user.last_name : "");
+        qs('pphone').textContent = user.phone_number || "—";
+        qs('paddr').textContent = "—"; // адрес можем хранить отдельно
       }
     }
 
@@ -186,18 +189,6 @@
       return { payload, fromTab };
     }
 
-    function fillProfile(p){
-      qs('pname').textContent = p.first_name || "—";
-      const parts = [];
-      if (p.street) parts.push(p.street);
-      if (p.house) parts.push('д. '+p.house);
-      if (p.flat) parts.push('кв. '+p.flat);
-      if (p.entrance) parts.push('подъезд '+p.entrance);
-      if (p.floor) parts.push('этаж '+p.floor);
-      qs('paddr').textContent = parts.length ? parts.join(', ') : "—";
-      qs('pphone').textContent = p.phone || "—";
-    }
-
     function sendRequest(){
       const status = qs('status');
       const bags = parseInt(qs('bags').value || "1", 10);
@@ -205,19 +196,17 @@
       const door = (qs('door').value || "").trim();
       const comment = (qs('comment').value || "").trim();
 
-      // Берём профиль из payload
-      const { payload: prof } = decodePayload();
+      const user = tg?.initDataUnsafe?.user || {};
 
       const payload = {
         bags,
         comment: [time, door, comment].filter(Boolean).join("; "),
-        first_name: prof.first_name || "",
-        street: prof.street || "",
-        house: prof.house || "",
-        flat: prof.flat || "",
-        entrance: prof.entrance || "",
-        floor: prof.floor || "",
-        phone: prof.phone || ""
+        profile: {
+          username: user.username || "—",
+          first_name: user.first_name || "—",
+          last_name: user.last_name || "",
+          phone: user.phone_number || "—"
+        }
       };
 
       status.textContent = "⏳ Отправляем заявку…";
@@ -230,9 +219,13 @@
       .then(r => r.json())
       .then(data => {
         console.log("Ответ API:", data);
-        status.textContent = "✅ Заявка отправлена!";
-        openTab('success');
-        setTimeout(()=>{ try { tg.close(); } catch(e){} }, 500);
+        if (data.ok) {
+          status.textContent = "✅ Заявка отправлена!";
+          openTab('success');
+          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 500);
+        } else {
+          status.textContent = "❌ Ошибка: " + (data.error || "неизвестно");
+        }
       })
       .catch(err => {
         console.error("Ошибка API:", err);
@@ -241,7 +234,6 @@
     }
 
     const { payload, fromTab } = decodePayload();
-    fillProfile(payload);
     openTab(fromTab || payload.tab || "menu");
   </script>
 </body>
