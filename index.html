@@ -16,7 +16,6 @@
       --btn:#2a2d34;
       --ok:#1d7e3a;
       --danger:#7e1d1d;
-      --warn:#8a6d1a;
     }
     * { box-sizing:border-box; }
     html, body { height:100%; }
@@ -30,7 +29,6 @@
     .btn:active { transform: translateY(1px); }
     .btn.ok { background:var(--ok); }
     .btn.danger { background:var(--danger); }
-    .btn.warn { background:var(--warn); }
     .row { display:flex; gap:10px; }
     .row > .btn { flex:1; }
     .input, .select, .textarea {
@@ -49,7 +47,6 @@ env(safe-area-inset-left);
     .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; }
     .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
     .tabbtn.active { color:#fff; }
-    .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -67,7 +64,7 @@ env(safe-area-inset-left);
       </div>
       <div class="card">
         <p class="muted">Тарифы сейчас</p>
-        <p><b>0 ₽</</b> за вынос. Помогите нам вырасти — расскажите друзьям ❤️</p>
+        <p><b>0 ₽</b> за вынос. Помогите нам вырасти — расскажите друзьям ❤️</p>
         <button class="btn" onclick="openTab('tariffs')">Подробнее о тарифах</button>
       </div>
     </section>
@@ -93,14 +90,6 @@ env(safe-area-inset-left);
 
       <label class="muted">Комментарий (необязательно)</label>
       <textarea id="comment" class="textarea" placeholder="Например: забрать пакеты у двери, я не дома"></textarea>
-
-      <div class="card">
-        <div class="muted">Адрес из профиля (уйдёт в заявку):</div>
-        <div id="addrPreview">—</div>
-        <div class="muted" style="margin-top:8px">Телефон:</div>
-        <div id="phonePreview">—</div>
-        <button class="btn warn" style="margin-top:12px" onclick="openTab('profile')">Изменить адрес/телефон</button>
-      </div>
 
       <button class="btn ok" onclick="sendRequest()">Отправить заявку</button>
       <div id="status" class="muted" style="margin-top:8px;"></div>
@@ -128,15 +117,12 @@ env(safe-area-inset-left);
       <button class="btn" onclick="openTab('menu')">Вернуться в меню</button>
     </section>
 
-    <!-- PROFILE (view + edit) -->
+    <!-- PROFILE -->
     <section id="tab-profile" class="hidden">
       <h2 class="h2">Профиль</h2>
       <div class="card">
         <div class="muted">Имя</div>
         <div id="pname">—</div>
-
-        <div class="muted" style="margin-top:12px">Юзернейм</div>
-        <div id="puname">—</div>
 
         <div class="muted" style="margin-top:12px">Адрес</div>
         <div id="paddr">—</div>
@@ -144,28 +130,9 @@ env(safe-area-inset-left);
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
 
-        <div id="pstatus" class="muted" style="margin-top:12px;"></div>
+        <button class="btn" style="margin-top:16px" onclick="editAddress()">Изменить адрес</button>
       </div>
-
-      <button class="btn" onclick="toggleEdit(true)">Изменить адрес</button>
-      <button class="btn" style="margin-top:8px" onclick="openTab('menu')">В меню</button>
-
-      <div id="profile-edit" class="card hidden" style="margin-top:12px">
-        <div class="grid-3">
-          <div><label class="muted">Улица</label><input id="f_street" class="input" /></div>
-          <div><label class="muted">Дом</label><input id="f_house" class="input" /></div>
-          <div><label class="muted">Кв.</label><input id="f_flat" class="input" /></div>
-        </div>
-        <div class="grid-3">
-          <div><label class="muted">Подъезд</label><input id="f_entrance" class="input" /></div>
-          <div><label class="muted">Этаж</label><input id="f_floor" class="input" /></div>
-          <div><label class="muted">Телефон</label><input id="f_phone" class="input" /></div>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn ok" onclick="saveProfile()">Сохранить</button>
-          <button class="btn danger" onclick="toggleEdit(false)">Отмена</button>
-        </div>
-      </div>
+      <button class="btn" onclick="openTab('menu')">В меню</button>
     </section>
   </div>
 
@@ -179,7 +146,12 @@ env(safe-area-inset-left);
 
   <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) { tg.expand(); tg.ready(); }
+    if (tg) {
+      tg.expand();
+      tg.setBackgroundColor("#0e0f12");
+      tg.setHeaderColor("#0e0f12");
+      tg.ready();
+    }
 
     function qs(id){ return document.getElementById(id); }
     function show(id){ qs(id).classList.remove('hidden'); }
@@ -190,51 +162,115 @@ env(safe-area-inset-left);
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
       ['menu','request','tariffs','profile'].forEach(t=>{
         const el = qs('btn-'+t);
-        if (el) el.classList.toggle('active', t===tab);
+        if (!el) return;
+        el.classList.toggle('active', t===tab);
       });
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, "", url.toString());
+
+      // при заходе в профиль обновим отображение из payload
+      if (tab === 'profile') {
+        fillProfileFromPayload();
+      }
     }
 
-    // payload
+    // ===== PAYLOAD из параметра p =====
     function decodePayload() {
       const url = new URL(window.location.href);
       const p = url.searchParams.get('p');
+      const fromTab = url.searchParams.get('tab') || undefined;
       let payload = {};
       if (p) {
         try {
           const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
+          // поддержка Unicode
           const json = decodeURIComponent(escape(window.atob(b64)));
           payload = JSON.parse(json);
-        } catch(e) {}
+        } catch(e) {
+          try {
+            payload = JSON.parse(atob(p));
+          } catch(_) {}
+        }
       }
-      return payload;
+      return { payload, fromTab };
     }
 
-    const State = { profile: { street:"", house:"", flat:"", entrance:"", floor:"", phone:"", first_name:"", username:"" } };
-    function addrFromProfile(p){ const parts=[]; if(p.street)parts.push(p.street); if(p.house)parts.push('д.'+p.house); if(p.flat)parts.push('кв.'+p.flat); 
-if(p.entrance)parts.push('подъезд '+p.entrance); if(p.floor)parts.push('этаж '+p.floor); return parts.join(', ')||"—"; }
-    function fillProfileView(){ const p=State.profile; qs('pname').textContent=p.first_name||"—"; qs('puname').textContent=p.username?"@"+p.username:"—"; 
-qs('paddr').textContent=addrFromProfile(p); qs('pphone').textContent=p.phone||"—"; qs('addrPreview').textContent=addrFromProfile(p); 
-qs('phonePreview').textContent=p.phone||"—"; }
-    function fillProfileForm(){ const p=State.profile; qs('f_street').value=p.street||""; qs('f_house').value=p.house||""; qs('f_flat').value=p.flat||""; 
-qs('f_entrance').value=p.entrance||""; qs('f_floor').value=p.floor||""; qs('f_phone').value=p.phone||""; }
-    function toggleEdit(on){ if(on){ fillProfileForm(); show('profile-edit'); } else { hide('profile-edit'); } }
-    function saveProfile(){ const p=State.profile; p.street=qs('f_street').value; p.house=qs('f_house').value; p.flat=qs('f_flat').value; p.entrance=qs('f_entrance').value; 
-p.floor=qs('f_floor').value; p.phone=qs('f_phone').value; fillProfileView(); toggleEdit(false); tg?.sendData(JSON.stringify({type:"update_profile",...p})); 
-qs('pstatus').textContent="✅ Сохранено"; }
+    function buildAddress(p) {
+      const parts = [];
+      if (p.street)   parts.push(p.street);
+      if (p.house)    parts.push("д." + p.house);
+      if (p.flat)     parts.push("кв." + p.flat);
+      if (p.entrance) parts.push("подъезд " + p.entrance);
+      if (p.floor)    parts.push("этаж " + p.floor);
+      if (p.city)     parts.push(p.city);
+      return parts.length ? parts.join(", ") : "—";
+    }
 
+    const { payload, fromTab } = decodePayload();
+
+    function fillProfileFromPayload() {
+      // имя
+      const name = (payload.first_name || "—") + (payload.last_name ? (" " + payload.last_name) : "");
+      qs('pname').textContent = name.trim() || "—";
+      // телефон
+      qs('pphone').textContent = payload.phone || "—";
+      // адрес
+      qs('paddr').textContent = buildAddress(payload);
+    }
+
+    // первичная подстановка в профиль при загрузке
+    fillProfileFromPayload();
+
+    // ===== ОТПРАВКА ЗАЯВКИ (через tg.sendData, без HTTP) =====
     function sendRequest(){
-      const status=qs('status'); const bags=parseInt(qs('bags').value,10)||1;
-      const time=qs('time').value, door=qs('door').value, comment=qs('comment').value;
-      
-fetch("/api/awq",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData:tg?.initData||null,bags,comment:[time,door,comment].filter(Boolean).join("; 
-"),profile:State.profile})})
-      .then(r=>r.json()).then(d=>{ if(!d.ok)throw 0; status.textContent="✅"; openTab('success'); })
-      .catch(()=>status.textContent="❌ Ошибка");
+      const status = qs('status');
+      const bags = parseInt(qs('bags').value || "1", 10);
+      const time = (qs('time').value || "").trim();
+      const door = (qs('door').value || "").trim();
+      const comment = (qs('comment').value || "").trim();
+
+      const mergedComment = [time, door, comment].filter(Boolean).join("; ");
+
+      const data = {
+        type: "create_request",
+        bags,
+        comment: mergedComment
+      };
+
+      try {
+        if (tg && tg.sendData) {
+          status.textContent = "⏳ Отправляем заявку…";
+          tg.sendData(JSON.stringify(data));
+          openTab('success');
+          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 600);
+        } else {
+          status.textContent = "❌ Откройте через Telegram Mini App";
+        }
+      } catch (e) {
+        console.error(e);
+        status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
+      }
     }
 
-    const payload=decodePayload(); Object.assign(State.profile,payload);
-    fillProfileView(); openTab("menu");
+    // ===== ИЗМЕНИТЬ АДРЕС =====
+    function editAddress() {
+      const data = { type: "edit_address" };
+      try {
+        if (tg && tg.sendData) {
+          tg.sendData(JSON.stringify(data));
+          // Закрываем окно — дальше бот спросит адрес по шагам
+          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 200);
+        } else {
+          alert("Откройте мини-приложение из Telegram, чтобы изменить адрес");
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    // открываем нужную вкладку при старте
+    openTab(fromTab || payload.tab || "menu");
   </script>
 </body>
 </html>
-
