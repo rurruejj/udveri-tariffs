@@ -167,22 +167,11 @@ env(safe-area-inset-left);
       url.searchParams.set('tab', tab);
       window.history.replaceState({}, "", url.toString());
 
-      if (tab === 'profile' && tg?.initDataUnsafe?.user) {
-        loadProfile(tg.initDataUnsafe.user.id);
-      }
-    }
-
-    async function loadProfile(userId){
-      try {
-        const res = await fetch("/get_user?user_id=" + userId);
-        const data = await res.json();
-        if (data.ok && data.profile){
-          qs('pname').textContent  = data.profile.name || "—";
-          qs('pphone').textContent = data.profile.phone || "—";
-          qs('paddr').textContent  = data.profile.address || "—";
-        }
-      } catch(e){
-        console.error("Ошибка загрузки профиля", e);
+      if (tab === 'profile' && tg && tg.initDataUnsafe?.user) {
+        const user = tg.initDataUnsafe.user;
+        qs('pname').textContent = user.first_name + (user.last_name ? " " + user.last_name : "");
+        qs('pphone').textContent = user.phone_number || "—";
+        qs('paddr').textContent = "—"; // адрес потом подгружаем из бэка
       }
     }
 
@@ -211,18 +200,38 @@ env(safe-area-inset-left);
       const user = tg?.initDataUnsafe?.user || {};
 
       const payload = {
-        type: "create_request",
+        initData: tg?.initData || "",
         bags,
-        comment: [time, door, comment].filter(Boolean).join("; ")
+        comment: [time, door, comment].filter(Boolean).join("; "),
+        profile: {
+          username: user.username || "—",
+          first_name: user.first_name || "—",
+          last_name: user.last_name || "",
+          phone: user.phone_number || "—"
+        }
       };
 
       status.textContent = "⏳ Отправляем заявку…";
 
-      tg.sendData(JSON.stringify(payload));
-
-      status.textContent = "✅ Заявка отправлена!";
-      openTab('success');
-      try { if (tg?.close) tg.close(); } catch(e){}
+      fetch("/api/awq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(data => {
+        console.log("Ответ API:", data);
+        if (data.ok) {
+          status.textContent = "✅ Заявка отправлена!";
+          openTab('success');
+        } else {
+          status.textContent = "❌ Ошибка: " + (data.error || "неизвестно");
+        }
+      })
+      .catch(err => {
+        console.error("Ошибка API:", err);
+        status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
+      });
     }
 
     const { payload, fromTab } = decodePayload();
