@@ -44,7 +44,7 @@
       display:flex; justify-content:space-around; align-items:center; padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) 
 env(safe-area-inset-left);
     }
-    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; cursor:pointer; }
+    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; }
     .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
     .tabbtn.active { color:#fff; }
   </style>
@@ -95,7 +95,7 @@ env(safe-area-inset-left);
       <div id="status" class="muted" style="margin-top:8px;"></div>
     </section>
 
-    <!-- SUCCESS -->
+    <!-- REQUEST SUCCESS -->
     <section id="tab-success" class="hidden">
       <div class="card">
         <h2 class="h2">✅ Заявка отправлена</h2>
@@ -134,7 +134,7 @@ env(safe-area-inset-left);
     </section>
   </div>
 
-  <!-- NAV -->
+  <!-- Bottom navigation -->
   <nav class="tabs">
     <div id="btn-menu"    class="tabbtn" onclick="openTab('menu')"><b>🏠</b>Меню</div>
     <div id="btn-request" class="tabbtn" onclick="openTab('request')"><b>🧺</b>Заявка</div>
@@ -163,9 +163,33 @@ env(safe-area-inset-left);
         if (!el) return;
         el.classList.toggle('active', t===tab);
       });
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, "", url.toString());
+
+      if (tab === 'profile' && tg && tg.initDataUnsafe?.user) {
+        const user = tg.initDataUnsafe.user;
+        qs('pname').textContent = user.first_name + (user.last_name ? " " + user.last_name : "");
+        qs('pphone').textContent = user.phone_number || "—";
+        qs('paddr').textContent = "—"; // адрес можно брать из базы
+      }
     }
 
-    // === Отправка заявки ===
+    function decodePayload() {
+      const url = new URL(window.location.href);
+      const p = url.searchParams.get('p');
+      const fromTab = url.searchParams.get('tab') || undefined;
+      let payload = {};
+      if (p) {
+        try {
+          const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
+          const json = decodeURIComponent(escape(window.atob(b64)));
+          payload = JSON.parse(json);
+        } catch(e) {}
+      }
+      return { payload, fromTab };
+    }
+
     function sendRequest(){
       const status = qs('status');
       const bags = parseInt(qs('bags').value || "1", 10);
@@ -176,7 +200,6 @@ env(safe-area-inset-left);
       const user = tg?.initDataUnsafe?.user || {};
 
       const payload = {
-        type: "create_request",
         bags,
         comment: [time, door, comment].filter(Boolean).join("; "),
         profile: {
@@ -187,29 +210,35 @@ env(safe-area-inset-left);
         }
       };
 
-      console.log("📤 Отправляем payload:", payload);
       status.textContent = "⏳ Отправляем заявку…";
 
       fetch("/api/awq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          initData: tg?.initData || "",
+          ...payload
+        })
       })
       .then(r => r.json())
       .then(data => {
-        console.log("📩 Ответ API:", data);
+        console.log("Ответ API:", data);
         if (data.ok) {
           status.textContent = "✅ Заявка отправлена!";
           openTab('success');
+          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 500);
         } else {
           status.textContent = "❌ Ошибка: " + (data.error || "неизвестно");
         }
       })
       .catch(err => {
-        console.error("❌ Ошибка fetch:", err);
+        console.error("Ошибка API:", err);
         status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
       });
     }
+
+    const { payload, fromTab } = decodePayload();
+    openTab(fromTab || payload.tab || "menu");
   </script>
 </body>
 </html>
