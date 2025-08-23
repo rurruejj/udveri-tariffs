@@ -44,7 +44,7 @@
       display:flex; justify-content:space-around; align-items:center; padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) 
 env(safe-area-inset-left);
     }
-    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; }
+    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; line-height:1.1; cursor:pointer; }
     .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
     .tabbtn.active { color:#fff; }
   </style>
@@ -95,7 +95,7 @@ env(safe-area-inset-left);
       <div id="status" class="muted" style="margin-top:8px;"></div>
     </section>
 
-    <!-- REQUEST SUCCESS -->
+    <!-- SUCCESS -->
     <section id="tab-success" class="hidden">
       <div class="card">
         <h2 class="h2">✅ Заявка отправлена</h2>
@@ -129,14 +129,12 @@ env(safe-area-inset-left);
 
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
-
-        <button class="btn" style="margin-top:16px" onclick="editAddress()">Изменить адрес</button>
       </div>
       <button class="btn" onclick="openTab('menu')">В меню</button>
     </section>
   </div>
 
-  <!-- Bottom navigation -->
+  <!-- NAV -->
   <nav class="tabs">
     <div id="btn-menu"    class="tabbtn" onclick="openTab('menu')"><b>🏠</b>Меню</div>
     <div id="btn-request" class="tabbtn" onclick="openTab('request')"><b>🧺</b>Заявка</div>
@@ -165,64 +163,9 @@ env(safe-area-inset-left);
         if (!el) return;
         el.classList.toggle('active', t===tab);
       });
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', tab);
-      window.history.replaceState({}, "", url.toString());
-
-      // при заходе в профиль обновим отображение из payload
-      if (tab === 'profile') {
-        fillProfileFromPayload();
-      }
     }
 
-    // ===== PAYLOAD из параметра p =====
-    function decodePayload() {
-      const url = new URL(window.location.href);
-      const p = url.searchParams.get('p');
-      const fromTab = url.searchParams.get('tab') || undefined;
-      let payload = {};
-      if (p) {
-        try {
-          const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
-          // поддержка Unicode
-          const json = decodeURIComponent(escape(window.atob(b64)));
-          payload = JSON.parse(json);
-        } catch(e) {
-          try {
-            payload = JSON.parse(atob(p));
-          } catch(_) {}
-        }
-      }
-      return { payload, fromTab };
-    }
-
-    function buildAddress(p) {
-      const parts = [];
-      if (p.street)   parts.push(p.street);
-      if (p.house)    parts.push("д." + p.house);
-      if (p.flat)     parts.push("кв." + p.flat);
-      if (p.entrance) parts.push("подъезд " + p.entrance);
-      if (p.floor)    parts.push("этаж " + p.floor);
-      if (p.city)     parts.push(p.city);
-      return parts.length ? parts.join(", ") : "—";
-    }
-
-    const { payload, fromTab } = decodePayload();
-
-    function fillProfileFromPayload() {
-      // имя
-      const name = (payload.first_name || "—") + (payload.last_name ? (" " + payload.last_name) : "");
-      qs('pname').textContent = name.trim() || "—";
-      // телефон
-      qs('pphone').textContent = payload.phone || "—";
-      // адрес
-      qs('paddr').textContent = buildAddress(payload);
-    }
-
-    // первичная подстановка в профиль при загрузке
-    fillProfileFromPayload();
-
-    // ===== ОТПРАВКА ЗАЯВКИ (через tg.sendData, без HTTP) =====
+    // === Отправка заявки ===
     function sendRequest(){
       const status = qs('status');
       const bags = parseInt(qs('bags').value || "1", 10);
@@ -230,47 +173,44 @@ env(safe-area-inset-left);
       const door = (qs('door').value || "").trim();
       const comment = (qs('comment').value || "").trim();
 
-      const mergedComment = [time, door, comment].filter(Boolean).join("; ");
+      const user = tg?.initDataUnsafe?.user || {};
 
-      const data = {
+      const payload = {
         type: "create_request",
         bags,
-        comment: mergedComment
+        comment: [time, door, comment].filter(Boolean).join("; "),
+        profile: {
+          username: user.username || "—",
+          first_name: user.first_name || "—",
+          last_name: user.last_name || "",
+          phone: user.phone_number || "—"
+        }
       };
 
-      try {
-        if (tg && tg.sendData) {
-          status.textContent = "⏳ Отправляем заявку…";
-          tg.sendData(JSON.stringify(data));
+      console.log("📤 Отправляем payload:", payload);
+      status.textContent = "⏳ Отправляем заявку…";
+
+      fetch("/api/awq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(data => {
+        console.log("📩 Ответ API:", data);
+        if (data.ok) {
+          status.textContent = "✅ Заявка отправлена!";
           openTab('success');
-          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 600);
         } else {
-          status.textContent = "❌ Откройте через Telegram Mini App";
+          status.textContent = "❌ Ошибка: " + (data.error || "неизвестно");
         }
-      } catch (e) {
-        console.error(e);
+      })
+      .catch(err => {
+        console.error("❌ Ошибка fetch:", err);
         status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
-      }
+      });
     }
-
-    // ===== ИЗМЕНИТЬ АДРЕС =====
-    function editAddress() {
-      const data = { type: "edit_address" };
-      try {
-        if (tg && tg.sendData) {
-          tg.sendData(JSON.stringify(data));
-          // Закрываем окно — дальше бот спросит адрес по шагам
-          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 200);
-        } else {
-          alert("Откройте мини-приложение из Telegram, чтобы изменить адрес");
-        }
-      } catch(e) {
-        console.error(e);
-      }
-    }
-
-    // открываем нужную вкладку при старте
-    openTab(fromTab || payload.tab || "menu");
   </script>
 </body>
 </html>
+
