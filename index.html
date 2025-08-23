@@ -130,7 +130,24 @@ env(safe-area-inset-left);
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
       </div>
+
       <button class="btn" onclick="openTab('menu')">В меню</button>
+      <button class="btn" onclick="showEdit()">Изменить адрес</button>
+
+      <!-- Форма редактирования -->
+      <div id="edit" class="card hidden">
+        <input id="i_street" class="input" placeholder="Улица" />
+        <input id="i_house" class="input" placeholder="Дом" />
+        <input id="i_flat" class="input" placeholder="Квартира" />
+        <input id="i_entrance" class="input" placeholder="Подъезд" />
+        <input id="i_floor" class="input" placeholder="Этаж" />
+        <input id="i_phone" class="input" placeholder="Телефон" />
+        <div class="row">
+          <button class="btn" onclick="hideEdit()">Отмена</button>
+          <button class="btn ok" onclick="saveProfile()">Сохранить</button>
+        </div>
+        <div id="edit_status" class="muted" style="margin-top:8px;"></div>
+      </div>
     </section>
   </div>
 
@@ -156,6 +173,7 @@ env(safe-area-inset-left);
     function hide(id){ qs(id).classList.add('hidden'); }
 
     const tabs = ["menu","request","success","tariffs","profile"];
+    let payload = {};
     function openTab(tab){
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
       ['menu','request','tariffs','profile'].forEach(t=>{
@@ -167,11 +185,24 @@ env(safe-area-inset-left);
       url.searchParams.set('tab', tab);
       window.history.replaceState({}, "", url.toString());
 
-      if (tab === 'profile' && tg && tg.initDataUnsafe?.user) {
-        const user = tg.initDataUnsafe.user;
-        qs('pname').textContent = user.first_name + (user.last_name ? " " + user.last_name : "");
-        qs('pphone').textContent = user.phone_number || "—";
-        qs('paddr').textContent = "—"; // адрес потом подгружаем из бэка
+      if (tab === 'profile') {
+        const user = tg?.initDataUnsafe?.user || {};
+        const name =
+          (payload.first_name || user.first_name || "") +
+          ((payload.last_name || user.last_name) ? " " + (payload.last_name || user.last_name) : "");
+        qs('pname').textContent = name || "—";
+        qs('pphone').textContent = (payload.phone || "").trim() || "—";
+
+        function fmtAddr(p){
+          const parts = [];
+          if (p.street)   parts.push(p.street);
+          if (p.house)    parts.push("д." + p.house);
+          if (p.flat)     parts.push("кв." + p.flat);
+          if (p.entrance) parts.push("подъезд " + p.entrance);
+          if (p.floor)    parts.push("этаж " + p.floor);
+          return parts.join(", ");
+        }
+        qs('paddr').textContent = fmtAddr(payload) || "—";
       }
     }
 
@@ -179,15 +210,15 @@ env(safe-area-inset-left);
       const url = new URL(window.location.href);
       const p = url.searchParams.get('p');
       const fromTab = url.searchParams.get('tab') || undefined;
-      let payload = {};
+      let pl = {};
       if (p) {
         try {
           const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
           const json = decodeURIComponent(escape(window.atob(b64)));
-          payload = JSON.parse(json);
+          pl = JSON.parse(json);
         } catch(e) {}
       }
-      return { payload, fromTab };
+      return { payload: pl, fromTab };
     }
 
     function sendRequest(){
@@ -199,15 +230,19 @@ env(safe-area-inset-left);
 
       const user = tg?.initDataUnsafe?.user || {};
 
-      const payload = {
-        initData: tg?.initData || "",
+      const data = {
         bags,
         comment: [time, door, comment].filter(Boolean).join("; "),
         profile: {
           username: user.username || "—",
           first_name: user.first_name || "—",
           last_name: user.last_name || "",
-          phone: user.phone_number || "—"
+          phone: payload.phone || user.phone_number || "—",
+          street: payload.street || "",
+          house: payload.house || "",
+          flat: payload.flat || "",
+          entrance: payload.entrance || "",
+          floor: payload.floor || ""
         }
       };
 
@@ -216,25 +251,59 @@ env(safe-area-inset-left);
       fetch("/api/awq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ initData: tg?.initData, ...data })
       })
       .then(r => r.json())
-      .then(data => {
-        console.log("Ответ API:", data);
-        if (data.ok) {
+      .then(resp => {
+        if (resp.ok) {
           status.textContent = "✅ Заявка отправлена!";
           openTab('success');
+          setTimeout(()=>{ try { tg.close(); } catch(e){} }, 500);
         } else {
-          status.textContent = "❌ Ошибка: " + (data.error || "неизвестно");
+          status.textContent = "❌ Ошибка: " + (resp.error || "неизвестно");
         }
       })
       .catch(err => {
-        console.error("Ошибка API:", err);
         status.textContent = "❌ Ошибка отправки. Попробуйте ещё раз.";
       });
     }
 
-    const { payload, fromTab } = decodePayload();
+    // Форма редактирования профиля
+    function showEdit(){
+      qs('i_street').value   = payload.street   || "";
+      qs('i_house').value    = payload.house    || "";
+      qs('i_flat').value     = payload.flat     || "";
+      qs('i_entrance').value = payload.entrance || "";
+      qs('i_floor').value    = payload.floor    || "";
+      qs('i_phone').value    = payload.phone    || "";
+      show('edit');
+    }
+    function hideEdit(){ hide('edit'); qs('edit_status').textContent=""; }
+
+    function saveProfile(){
+      const data = {
+        type: "update_profile",
+        street:   qs('i_street').value.trim(),
+        house:    qs('i_house').value.trim(),
+        flat:     qs('i_flat').value.trim(),
+        entrance: qs('i_entrance').value.trim(),
+        floor:    qs('i_floor').value.trim(),
+        phone:    qs('i_phone').value.trim()
+      };
+      qs('edit_status').textContent = "⏳ Сохраняем…";
+      try {
+        Telegram.WebApp.sendData(JSON.stringify(data));
+        Object.assign(payload, data);
+        openTab('profile');
+        qs('edit_status').textContent = "✅ Сохранено";
+        setTimeout(hideEdit, 600);
+      } catch(e){
+        qs('edit_status').textContent = "❌ Не удалось отправить";
+      }
+    }
+
+    const { payload: pl, fromTab } = decodePayload();
+    payload = pl;
     openTab(fromTab || payload.tab || "menu");
   </script>
 </body>
