@@ -29,13 +29,13 @@ export default async function handler(req, res) {
 
     // Отправляем заявку в Telegram бота
     const BOT_TOKEN = process.env.BOT_TOKEN;
-    const ADMIN_ID = process.env.ADMIN_ID; // 🔹 тут теперь ADMIN_ID
+    const ADMIN_ID = process.env.ADMIN_ID; // ✅ правильное название
 
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: CHAT_ID,
+        chat_id: ADMIN_ID, // ✅ используем ADMIN_ID
         text,
         parse_mode: "HTML",
       }),
