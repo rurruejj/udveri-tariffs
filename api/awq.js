@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: "bad args" });
     }
 
-    // Разбираем initData (оно приходит от Telegram Mini App)
+    // Разбираем initData
     const params = new URLSearchParams(initData);
     const userRaw = params.get("user");
     const user = userRaw ? JSON.parse(userRaw) : null;
@@ -20,18 +20,17 @@ export default async function handler(req, res) {
 📝 Новая заявка!
 👤 Пользователь: @${user?.username || "—"}
 📛 Имя: ${user?.first_name || ""} ${user?.last_name || ""}
-📞 Телефон: ${user?.phone_number || "—"}
-📍 Адрес: ${user?.address || "—"}
+🆔 ID: ${user?.id || "—"}
 
 📦 Кол-во сумок: ${bags}
 💬 Комментарий: ${comment || "—"}
     `;
 
-    // Отправляем заявку в Telegram бота
+    // Отправляем в Telegram
     const BOT_TOKEN = process.env.BOT_TOKEN;
     const CHAT_ID = process.env.CHAT_ID;
 
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -40,6 +39,13 @@ export default async function handler(req, res) {
         parse_mode: "HTML",
       }),
     });
+
+    const tgData = await tgRes.json();
+
+    if (!tgData.ok) {
+      console.error("Ошибка отправки в Telegram:", tgData);
+      return res.status(500).json({ ok: false, error: "telegram error", details: tgData });
+    }
 
     return res.status(200).json({ ok: true });
   } catch (err) {
