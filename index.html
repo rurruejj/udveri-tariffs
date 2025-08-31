@@ -20,41 +20,73 @@ content="width=device-width,initial-scale=1,viewport-fit=cover" />
     }
     * { box-sizing:border-box; }
     html, body { height:100%; }
-    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", 
-Roboto, Arial; background:var(--bg); color:var(--text); }
+    body {
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background:var(--bg);
+      color:var(--text);
+    }
     .container { padding: 16px 16px 88px; max-width: 720px; margin: 0 
 auto; }
     .hidden { display:none; }
     .h2 { font-size:20px; margin:0 0 12px; font-weight:600; }
     .muted { color:var(--muted); font-size:14px; }
-    .card { background:var(--card); border:1px solid var(--line); 
-border-radius:16px; padding:16px; margin:12px 0; }
-    .btn { display:block; width:100%; padding:14px 16px; 
-border-radius:14px; border:0; background:var(--btn); color:var(--text); 
-font-size:16px; cursor:pointer; }
+    .card {
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      margin:12px 0;
+    }
+    .btn {
+      display:block;
+      width:100%;
+      padding:14px 16px;
+      border-radius:14px;
+      border:0;
+      background:var(--btn);
+      color:var(--text);
+      font-size:16px;
+      cursor:pointer;
+    }
     .btn:active { transform: translateY(1px); }
     .btn.ok { background:var(--ok); }
     .btn.danger { background:var(--danger); }
     .row { display:flex; gap:10px; }
     .row > .btn { flex:1; }
     .input, .select, .textarea {
-      width:100%; padding:12px 14px; border-radius:12px; border:1px solid 
-var(--line);
-      background:#1a1c22; color:var(--text); margin:8px 0 16px; 
-font-size:15px;
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#1a1c22;
+      color:var(--text);
+      margin:8px 0 16px;
+      font-size:15px;
     }
     .textarea { resize:vertical; min-height:90px; }
     .kvs { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-
     .tabs {
-      position:fixed; left:0; right:0; bottom:0; height:72px;
-      background:var(--bg2); border-top:1px solid var(--line);
-      display:flex; justify-content:space-around; align-items:center; 
-padding:8px env(safe-area-inset-right) calc(8px + 
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      height:72px;
+      background:var(--bg2);
+      border-top:1px solid var(--line);
+      display:flex;
+      justify-content:space-around;
+      align-items:center;
+      padding:8px env(safe-area-inset-right) calc(8px + 
 env(safe-area-inset-bottom)) env(safe-area-inset-left);
     }
-    .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; 
-line-height:1.1; }
+    .tabbtn {
+      flex:1;
+      text-align:center;
+      color:#9aa0a6;
+      font-size:13px;
+      line-height:1.1;
+    }
     .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
     .tabbtn.active { color:#fff; }
   </style>
@@ -91,7 +123,6 @@ onclick="openTab('profile')">Профиль</button>
         
 <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
       </select>
-
       <div class="kvs">
         <div>
           <label class="muted">Время (необязательно)</label>
@@ -104,11 +135,9 @@ onclick="openTab('profile')">Профиль</button>
 1234#" />
         </div>
       </div>
-
       <label class="muted">Комментарий (необязательно)</label>
       <textarea id="comment" class="textarea" placeholder="Например: 
 забрать пакеты у двери, я не дома"></textarea>
-
       <button class="btn ok" onclick="sendRequest()">Отправить 
 заявку</button>
       <div id="status" class="muted" style="margin-top:8px;"></div>
@@ -146,33 +175,14 @@ onclick="openTab('profile')">Профиль</button>
       <div class="card">
         <div class="muted">Имя</div>
         <div id="pname">—</div>
-
         <div class="muted" style="margin-top:12px">Адрес</div>
         <div id="paddr">—</div>
-
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
       </div>
-
       <button class="btn" onclick="openTab('menu')">В меню</button>
-      <button class="btn" onclick="changeAddress()">Изменить 
+      <button class="btn ok" onclick="openBotChat()">Изменить 
 адрес</button>
-
-      <!-- Форма редактирования (оставлена как есть) -->
-      <div id="edit" class="card hidden">
-        <input id="i_street" class="input" placeholder="Улица" />
-        <input id="i_house" class="input" placeholder="Дом" />
-        <input id="i_flat" class="input" placeholder="Квартира" />
-        <input id="i_entrance" class="input" placeholder="Подъезд" />
-        <input id="i_floor" class="input" placeholder="Этаж" />
-        <input id="i_phone" class="input" placeholder="Телефон" />
-        <div class="row">
-          <button class="btn" onclick="hideEdit()">Отмена</button>
-          <button class="btn ok" 
-onclick="saveProfile()">Сохранить</button>
-        </div>
-        <div id="edit_status" class="muted" style="margin-top:8px;"></div>
-      </div>
     </section>
   </div>
 
@@ -203,6 +213,7 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
 
     const tabs = ["menu","request","success","tariffs","profile"];
     let payload = {};
+
     function openTab(tab){
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
       ['menu','request','tariffs','profile'].forEach(t=>{
@@ -216,20 +227,18 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
 
       if (tab === 'profile') {
         const user = tg?.initDataUnsafe?.user || {};
-        const name =
-          (payload.first_name || user.first_name || "") +
+        const name = (payload.first_name || user.first_name || "") +
           ((payload.last_name || user.last_name) ? " " + 
 (payload.last_name || user.last_name) : "");
         qs('pname').textContent = name || "—";
         qs('pphone').textContent = (payload.phone || "").trim() || "—";
-
         function fmtAddr(p){
           const parts = [];
-          if (p.street)   parts.push(p.street);
-          if (p.house)    parts.push("д." + p.house);
-          if (p.flat)     parts.push("кв." + p.flat);
+          if (p.street) parts.push(p.street);
+          if (p.house) parts.push("д." + p.house);
+          if (p.flat) parts.push("кв." + p.flat);
           if (p.entrance) parts.push("подъезд " + p.entrance);
-          if (p.floor)    parts.push("этаж " + p.floor);
+          if (p.floor) parts.push("этаж " + p.floor);
           return parts.join(", ");
         }
         qs('paddr').textContent = fmtAddr(payload) || "—";
@@ -257,9 +266,7 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
       const time = (qs('time').value || "").trim();
       const door = (qs('door').value || "").trim();
       const comment = (qs('comment').value || "").trim();
-
       const user = tg?.initDataUnsafe?.user || {};
-
       const data = {
         bags,
         comment: [time, door, comment].filter(Boolean).join("; "),
@@ -275,9 +282,7 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
           floor: payload.floor || ""
         }
       };
-
       status.textContent = "⏳ Отправляем заявку…";
-
       fetch("/api/awq", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -299,75 +304,10 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
       });
     }
 
-    // Форма редактирования (оставлено как у тебя)
-    function showEdit(){
-      qs('i_street').value   = payload.street   || "";
-      qs('i_house').value    = payload.house    || "";
-      qs('i_flat').value     = payload.flat     || "";
-      qs('i_entrance').value = payload.entrance || "";
-      qs('i_floor').value    = payload.floor    || "";
-      qs('i_phone').value    = payload.phone    || "";
-      show('edit');
+    // Открыть чат с ботом
+    function openBotChat() {
+      tg.openTelegramLink("https://t.me/udveri_ru_bot");
     }
-    function hideEdit(){ hide('edit'); qs('edit_status').textContent=""; }
-
-    function saveProfile(){
-      const data = {
-        street:   qs('i_street').value.trim(),
-        house:    qs('i_house').value.trim(),
-        flat:     qs('i_flat').value.trim(),
-        entrance: qs('i_entrance').value.trim(),
-        floor:    qs('i_floor').value.trim(),
-        phone:    qs('i_phone').value.trim()
-      };
-      qs('edit_status').textContent = "⏳ Сохраняем…";
-
-      fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: tg?.initData, ...data })
-      })
-      .then(r => r.json())
-      .then(resp => {
-        if (resp.ok) {
-          Object.assign(payload, data);
-          qs('edit_status').textContent = "✅ Сохранено";
-          openTab('profile');
-          setTimeout(hideEdit, 600);
-        } else {
-          qs('edit_status').textContent = "❌ Ошибка: " + (resp.error || 
-"неизвестно");
-        }
-      })
-      .catch(err => {
-        qs('edit_status').textContent = "❌ Ошибка сохранения";
-      });
-    }
-
-    // --- ДОБАВЛЕНО: корректный диплинк по реальному username бота + 
-сворачивание мини-аппа
-    function changeAddress(){
-      const botUser = (payload && payload.bot_username) ? 
-payload.bot_username : "";
-      const url = botUser ? `https://t.me/${botUser}?start=edit_address` : 
-null;
-      try {
-        if (url && tg && tg.openTelegramLink) tg.openTelegramLink(url);
-        else if (url) window.open(url, "_blank");
-      } catch(e) {}
-      setTimeout(()=>{ try { tg && tg.close && tg.close(); } catch(e){} }, 
-120);
-    }
-
-    // Загружаем профиль при старте (как у тебя)
-    fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData: tg?.initData })
-    })
-    .then(r => r.json())
-    .then(resp => { if (resp.ok) payload = resp.data || payload; })
-    .catch(()=>{});
 
     const { payload: pl, fromTab } = decodePayload();
     payload = pl || payload;
