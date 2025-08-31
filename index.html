@@ -8,64 +8,86 @@ content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <style>
     :root {
-      --bg: #0e0f12;
-      --bg2:#111318;
-      --card:#15171c;
-      --line:#23262d;
-      --text:#ffffff;
-      --muted:#a7adb7;
-      --btn:#2a2d34;
-      --ok:#1d7e3a;
-      --danger:#7e1d1d;
+      --bg: #0d0f13;
+      --bg2: rgba(18, 20, 26, 0.7);
+      --card: rgba(30, 33, 41, 0.6);
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #ffffff;
+      --muted: #a7adb7;
+      --btn: rgba(255, 255, 255, 0.08);
+      --ok: linear-gradient(135deg,#1db954,#1aa34a);
+      --danger: linear-gradient(135deg,#ff4d4d,#a10000);
+      --primary: linear-gradient(135deg,#4a90e2,#357ab7);
+      --radius: 18px;
+      --shadow: 0 8px 24px rgba(0,0,0,0.4);
+      --transition: all 0.25s ease;
     }
     * { box-sizing:border-box; }
     html, body { height:100%; }
     body {
       margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background:var(--bg);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, 
+Arial;
+      background: var(--bg);
+      background-image: radial-gradient(circle at 20% 20%, #1a1d25, 
+transparent 50%),
+                        radial-gradient(circle at 80% 80%, #111318, 
+transparent 40%);
       color:var(--text);
     }
-    .container { padding: 16px 16px 88px; max-width: 720px; margin: 0 
-auto; }
+    .container { padding: 20px 20px 88px; max-width: 720px; margin: 0 
+auto; animation: fadeIn 0.5s ease; }
     .hidden { display:none; }
-    .h2 { font-size:20px; margin:0 0 12px; font-weight:600; }
+    .h2 { font-size:22px; margin:0 0 14px; font-weight:600; }
     .muted { color:var(--muted); font-size:14px; }
     .card {
       background:var(--card);
+      backdrop-filter: blur(12px);
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:16px;
-      margin:12px 0;
+      border-radius:var(--radius);
+      padding:20px;
+      margin:16px 0;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.4s ease;
     }
     .btn {
       display:block;
       width:100%;
-      padding:14px 16px;
-      border-radius:14px;
+      padding:14px 18px;
+      border-radius:var(--radius);
       border:0;
       background:var(--btn);
       color:var(--text);
       font-size:16px;
+      font-weight:500;
       cursor:pointer;
+      transition: var(--transition);
     }
-    .btn:active { transform: translateY(1px); }
-    .btn.ok { background:var(--ok); }
-    .btn.danger { background:var(--danger); }
-    .row { display:flex; gap:10px; }
+    .btn:hover { background: rgba(255,255,255,0.12); }
+    .btn:active { transform: scale(0.97); }
+    .btn.ok { background:var(--ok); color:#fff; }
+    .btn.danger { background:var(--danger); color:#fff; }
+    .row { display:flex; gap:12px; }
     .row > .btn { flex:1; }
     .input, .select, .textarea {
       width:100%;
-      padding:12px 14px;
-      border-radius:12px;
+      padding:14px 16px;
+      border-radius:14px;
       border:1px solid var(--line);
-      background:#1a1c22;
+      background:rgba(255,255,255,0.05);
+      backdrop-filter: blur(8px);
       color:var(--text);
-      margin:8px 0 16px;
+      margin:10px 0 18px;
       font-size:15px;
+      transition: var(--transition);
     }
-    .textarea { resize:vertical; min-height:90px; }
-    .kvs { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .input:focus, .select:focus, .textarea:focus {
+      border-color:#4a90e2;
+      outline:none;
+      box-shadow:0 0 0 3px rgba(74,144,226,0.2);
+    }
+    .textarea { resize:vertical; min-height:100px; }
+    .kvs { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     .tabs {
       position:fixed;
       left:0;
@@ -79,16 +101,26 @@ auto; }
       align-items:center;
       padding:8px env(safe-area-inset-right) calc(8px + 
 env(safe-area-inset-bottom)) env(safe-area-inset-left);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
     }
     .tabbtn {
       flex:1;
       text-align:center;
       color:#9aa0a6;
       font-size:13px;
-      line-height:1.1;
+      line-height:1.2;
+      transition: var(--transition);
     }
-    .tabbtn b { display:block; font-size:18px; margin-bottom:4px; }
-    .tabbtn.active { color:#fff; }
+    .tabbtn b {
+      display:block;
+      font-size:20px;
+      margin-bottom:4px;
+    }
+    .tabbtn.active { color:#fff; transform: scale(1.05); }
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+    @keyframes slideUp { from {opacity:0; transform:translateY(10px);} to 
+{opacity:1; transform:translateY(0);} }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -100,10 +132,10 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
       <div class="card">
         <p class="muted">Быстрые действия:</p>
         <div class="row">
-          <button class="btn" onclick="openTab('request')">Оставить 
+          <button class="btn" onclick="openTab('request')">🧺 Оставить 
 заявку</button>
-          <button class="btn" 
-onclick="openTab('profile')">Профиль</button>
+          <button class="btn" onclick="openTab('profile')">👤 
+Профиль</button>
         </div>
       </div>
       <div class="card">
@@ -138,7 +170,7 @@ onclick="openTab('profile')">Профиль</button>
       <label class="muted">Комментарий (необязательно)</label>
       <textarea id="comment" class="textarea" placeholder="Например: 
 забрать пакеты у двери, я не дома"></textarea>
-      <button class="btn ok" onclick="sendRequest()">Отправить 
+      <button class="btn ok" onclick="sendRequest()">🚀 Отправить 
 заявку</button>
       <div id="status" class="muted" style="margin-top:8px;"></div>
     </section>
@@ -151,8 +183,8 @@ onclick="openTab('profile')">Профиль</button>
 в меню или оформить новую заявку.</p>
       </div>
       <div class="row">
-        <button class="btn" onclick="openTab('menu')">В меню</button>
-        <button class="btn" onclick="openTab('request')">Новая 
+        <button class="btn" onclick="openTab('menu')">🏠 В меню</button>
+        <button class="btn" onclick="openTab('request')">🧺 Новая 
 заявка</button>
       </div>
     </section>
@@ -180,8 +212,8 @@ onclick="openTab('profile')">Профиль</button>
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
       </div>
-      <button class="btn" onclick="openTab('menu')">В меню</button>
-      <button class="btn ok" onclick="openBotChat()">Изменить 
+      <button class="btn" onclick="openTab('menu')">🏠 В меню</button>
+      <button class="btn ok" onclick="openBotChat()">✏️ Изменить 
 адрес</button>
     </section>
   </div>
@@ -202,8 +234,8 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.expand();
-      tg.setBackgroundColor("#0e0f12");
-      tg.setHeaderColor("#0e0f12");
+      tg.setBackgroundColor("#0d0f13");
+      tg.setHeaderColor("#0d0f13");
       tg.ready();
     }
 
@@ -306,7 +338,7 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
 
     // Открыть чат с ботом для изменения адреса
     function openBotChat() {
-      if (tg) tg.close(); // закрываем миниапп
+      if (tg) tg.close(); 
       
 tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
     }
