@@ -118,32 +118,34 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
       margin-bottom:4px;
     }
     .tabbtn.active { color:#fff; transform: scale(1.05); }
+
+    /* профиль */
+    .profile-header {
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .profile-photo {
+      width:72px;
+      height:72px;
+      border-radius:50%;
+      background:#333;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+    .profile-photo img {
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .profile-name {
+      font-size:18px;
+      font-weight:600;
+    }
+
     @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
     @keyframes slideUp { from {opacity:0; transform:translateY(10px);} to 
 {opacity:1; transform:translateY(0);} }
-
-    /* ------- Профиль: аватар + имя сверху ------- */
-    .profile-top {
-      text-align:center;
-      padding-top:6px;
-      padding-bottom:10px;
-    }
-    .avatar-ring {
-      width:96px; height:96px; margin:0 auto 10px;
-      border-radius:50%;
-      background:
-        linear-gradient(135deg,#4a90e2,#357ab7) padding-box,
-        rgba(255,255,255,0.18) border-box;
-      border:3px solid transparent;
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
-      overflow:hidden;
-    }
-    .avatar-ring img {
-      width:100%; height:100%;
-      object-fit:cover; border-radius:50%; display:block;
-    }
-    .pname-big { font-size:20px; font-weight:650; }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -227,25 +229,17 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
     <!-- PROFILE -->
     <section id="tab-profile" class="hidden">
       <h2 class="h2">Профиль</h2>
-
-      <!-- НОВОЕ: шапка профиля как на референсе -->
-      <div class="card profile-top">
-        <div class="avatar-ring">
-          <img id="pavatar" alt="Фото профиля" />
-        </div>
-        <div id="pname_big" class="pname-big">—</div>
-      </div>
-
-      <!-- Твой текущий блок с деталями (логика сохранена) -->
       <div class="card">
-        <div class="muted">Имя</div>
-        <div id="pname">—</div>
+        <div class="profile-header">
+          <div class="profile-photo"><img id="pphoto" src="" 
+alt="Фото"></div>
+          <div class="profile-name" id="pname">—</div>
+        </div>
         <div class="muted" style="margin-top:12px">Адрес</div>
         <div id="paddr">—</div>
         <div class="muted" style="margin-top:12px">Телефон</div>
         <div id="pphone">—</div>
       </div>
-
       <button class="btn" onclick="openTab('menu')">🏠 В меню</button>
       <button class="btn ok" onclick="openBotChat()">✏️ Изменить 
 адрес</button>
@@ -280,26 +274,6 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
     const tabs = ["menu","request","success","tariffs","profile"];
     let payload = {};
 
-    function initialsAvatar(name){
-      const initials = (name || "U 
-D").trim().split(/\s+/).slice(0,2).map(s=>s[0]?.toUpperCase()||"").join("");
-      const svg =
-        `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>
-           <defs>
-             <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-               <stop offset='0%' stop-color='#4a90e2'/>
-               <stop offset='100%' stop-color='#357ab7'/>
-             </linearGradient>
-           </defs>
-           <rect width='100%' height='100%' fill='url(#g)'/>
-           <text x='50%' y='55%' text-anchor='middle' 
-dominant-baseline='middle'
-                 font-family='Inter, Arial, sans-serif' font-size='64' 
-fill='#fff'>${initials}</text>
-         </svg>`;
-      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-    }
-
     function openTab(tab){
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
       ['menu','request','tariffs','profile'].forEach(t=>{
@@ -316,13 +290,8 @@ fill='#fff'>${initials}</text>
         const name = (payload.first_name || user.first_name || "") +
           ((payload.last_name || user.last_name) ? " " + 
 (payload.last_name || user.last_name) : "");
-
-        qs('pname_big').textContent = name || "—";       // имя в шапке
-        qs('pname').textContent = name || "—";           // твой текущий 
-блок "Имя"
+        qs('pname').textContent = name || "—";
         qs('pphone').textContent = (payload.phone || "").trim() || "—";
-
-        // адрес
         function fmtAddr(p){
           const parts = [];
           if (p.street) parts.push(p.street);
@@ -334,11 +303,14 @@ fill='#fff'>${initials}</text>
         }
         qs('paddr').textContent = fmtAddr(payload) || "—";
 
-        // аватар
-        const photo = user.photo_url || payload.photo_url || "";
-        const img = qs('pavatar');
-        img.src = photo || initialsAvatar(name);
-        img.alt = name || "Фото профиля";
+        // фото профиля
+        const photoUrl = user.photo_url || "";
+        if (photoUrl) {
+          qs('pphoto').src = photoUrl;
+        } else {
+          qs('pphoto').src = 
+"https://via.placeholder.com/72x72.png?text=👤";
+        }
       }
     }
 
@@ -401,9 +373,8 @@ fill='#fff'>${initials}</text>
       });
     }
 
-    // Открыть чат с ботом для изменения адреса
     function openBotChat() {
-      if (tg) tg.close();
+      if (tg) tg.close(); 
       
 tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
     }
