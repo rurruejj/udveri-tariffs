@@ -51,7 +51,8 @@ font-size:15px;
       background:var(--bg2); border-top:1px solid var(--line);
       display:flex; justify-content:space-around; align-items:center; 
 padding:8px env(safe-area-inset-right) calc(8px + 
-env(safe-area-inset-bottom)) env(safe-area-inset-left);
+env(safe-area-inset-bottom)) 
+env(safe-area-inset-left);
     }
     .tabbtn { flex:1; text-align:center; color:#9aa0a6; font-size:13px; 
 line-height:1.1; }
@@ -155,9 +156,24 @@ onclick="openTab('profile')">Профиль</button>
       </div>
 
       <button class="btn" onclick="openTab('menu')">В меню</button>
-      <!-- ✨ изменённая кнопка -->
       <button class="btn" onclick="changeAddress()">Изменить 
 адрес</button>
+
+      <!-- Форма редактирования -->
+      <div id="edit" class="card hidden">
+        <input id="i_street" class="input" placeholder="Улица" />
+        <input id="i_house" class="input" placeholder="Дом" />
+        <input id="i_flat" class="input" placeholder="Квартира" />
+        <input id="i_entrance" class="input" placeholder="Подъезд" />
+        <input id="i_floor" class="input" placeholder="Этаж" />
+        <input id="i_phone" class="input" placeholder="Телефон" />
+        <div class="row">
+          <button class="btn" onclick="hideEdit()">Отмена</button>
+          <button class="btn ok" 
+onclick="saveProfile()">Сохранить</button>
+        </div>
+        <div id="edit_status" class="muted" style="margin-top:8px;"></div>
+      </div>
     </section>
   </div>
 
@@ -284,17 +300,65 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
       });
     }
 
-    // ✨ новая логика изменения адреса
-    function changeAddress() {
+    // Форма редактирования
+    function showEdit(){
+      qs('i_street').value   = payload.street   || "";
+      qs('i_house').value    = payload.house    || ""
+      qs('i_flat').value     = payload.flat     || "";
+      qs('i_entrance').value = payload.entrance || "";
+      qs('i_floor').value    = payload.floor    || "";
+      qs('i_phone').value    = payload.phone    || "";
+      show('edit');
+    }
+    function hideEdit(){ hide('edit'); qs('edit_status').textContent=""; }
+
+    function saveProfile(){
+      const data = {
+        street:   qs('i_street').value.trim(),
+        house:    qs('i_house').value.trim(),
+        flat:     qs('i_flat').value.trim(),
+        entrance: qs('i_entrance').value.trim(),
+        floor:    qs('i_floor').value.trim(),
+        phone:    qs('i_phone').value.trim()
+      };
+      qs('edit_status').textContent = "⏳ Сохраняем…";
+
+      fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: tg?.initData, ...data })
+      })
+      .then(r => r.json())
+      .then(resp => {
+        if (resp.ok) {
+          Object.assign(payload, data);
+          qs('edit_status').textContent = "✅ Сохранено";
+          openTab('profile');
+          setTimeout(hideEdit, 600);
+        } else {
+          qs('edit_status').textContent = "❌ Ошибка: " + (resp.error || 
+"неизвестно");
+        }
+      })
+      .catch(err => {
+        qs('edit_status').textContent = "❌ Ошибка сохранения";
+      });
+    }
+
+    // --- ДОБАВЛЕНО: переход к боту для изменения адреса и сворачивание 
+мини-аппа
+    function changeAddress(){
       try {
-        // закрываем мини-приложение
-        tg.close();
-        // открываем бот для диалога
-        tg.openTelegramLink("https://t.me/ВАШ_БОТ"); // замените на 
-username бота
-      } catch(e) {
-        console.error("Ошибка открытия бота:", e);
-      }
+        if (tg && tg.openTelegramLink) {
+          
+tg.openTelegramLink("https://t.me/udveri_bot?start=edit_address");
+        } else {
+          window.open("https://t.me/udveri_bot?start=edit_address", 
+"_blank");
+        }
+      } catch(e) {}
+      setTimeout(()=>{ try { tg && tg.close && tg.close(); } catch(e){} }, 
+120);
     }
 
     // Загружаем профиль при старте
