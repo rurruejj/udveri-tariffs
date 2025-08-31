@@ -378,14 +378,11 @@ alt="avatar">`;
       });
     }
 
-    // Открыть чат с ботом для изменения адреса
     function openBotChat() {
-      if (!tg) return;
-      try { tg.close(); } catch(e){}
+  if (tg) tg.close(); // закрываем миниапп
+  tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
+}
       
-tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
-    }
-
     const { payload: pl, fromTab } = decodePayload();
     payload = pl || payload;
     openTab(fromTab || payload.tab || "menu");
