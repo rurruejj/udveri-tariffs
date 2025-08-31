@@ -381,7 +381,7 @@ alt="avatar">`;
     // Открыть чат с ботом для изменения адреса
     function openBotChat() {
       if (!tg) return;
-      try { tg.close(); } catch(e){}   // ✅ вернул закрытие
+      try { tg.close(); } catch(e){}
       
 tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
     }
