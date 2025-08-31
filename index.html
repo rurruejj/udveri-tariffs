@@ -304,9 +304,11 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
       });
     }
 
-    // Открыть чат с ботом
+    // Открыть чат с ботом для изменения адреса
     function openBotChat() {
-      tg.openTelegramLink("https://t.me/udveri_ru_bot");
+      if (tg) tg.close(); // закрываем миниапп
+      
+tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
     }
 
     const { payload: pl, fromTab } = decodePayload();
