@@ -226,11 +226,33 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
     <!-- TARIFFS -->
     <section id="tab-tariffs" class="hidden">
       <h2 class="h2">Тарифы</h2>
+
+      <!-- Единоразовый вынос -->
       <div class="card">
-        <p>Промо-стоимость: <b>0 ₽</b>.</p>
-        <p class="muted">Сервис в запуске, собираем базу клиентов. 
-Спасибо, что с нами!</p>
+        <p><b>Единоразовый вынос</b></p>
+        <p>Стоимость: <b>100 ₽</b></p>
+        <p class="muted">Одноразовая услуга по выносу пакетов.</p>
+        <button class="btn ok">Выбрать</button>
       </div>
+
+      <!-- Месячная подписка через 3 дня -->
+      <div class="card">
+        <p><b>Месячная подписка (через 3 дня)</b></p>
+        <p>Безлимитный вынос: <b>399 ₽/мес</b></p>
+        <p class="muted">Подписка активна сразу, следующий вынос возможен 
+через 3 дня после предыдущего.</p>
+        <button class="btn ok">Выбрать</button>
+      </div>
+
+      <!-- Месячная подписка каждый день -->
+      <div class="card">
+        <p><b>Месячная подписка (каждый день)</b></p>
+        <p>Безлимитный вынос: <b>599 ₽/мес</b></p>
+        <p class="muted">Подписка активна сразу, заявки доступны каждый 
+день.</p>
+        <button class="btn ok">Выбрать</button>
+      </div>
+
       <button class="btn" onclick="openTab('menu')">Вернуться в 
 меню</button>
     </section>
