@@ -146,6 +146,15 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
     @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
     @keyframes slideUp { from {opacity:0; transform:translateY(10px);} to 
 {opacity:1; transform:translateY(0);} }
+
+    /* Стиль карты */
+    #map {
+      width: 100%;
+      height: 300px; /* можно изменить */
+      margin-top: 20px;
+      border-radius: 18px;
+      overflow: hidden;
+    }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -246,6 +255,12 @@ env(safe-area-inset-bottom)) env(safe-area-inset-left);
       <button class="btn ok" onclick="openBotChat()">✏️ Изменить 
 адрес</button>
     </section>
+
+    <!-- MAP -->
+    <section id="tab-map" class="hidden">
+      <h2 class="h2">Карта</h2>
+      <div id="map"></div>
+    </section>
   </div>
 
   <!-- Bottom navigation -->
@@ -258,7 +273,12 @@ onclick="openTab('request')"><b>🧺</b>Заявка</div>
 onclick="openTab('tariffs')"><b>💳</b>Тарифы</div>
     <div id="btn-profile" class="tabbtn" 
 onclick="openTab('profile')"><b>👤</b>Профиль</div>
+    <div id="btn-map" class="tabbtn" 
+onclick="openTab('map')"><b>🗺</b>Карта</div>
   </nav>
+
+  <!-- Яндекс.Карты -->
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
 
   <script>
     const tg = window.Telegram?.WebApp;
@@ -273,12 +293,13 @@ onclick="openTab('profile')"><b>👤</b>Профиль</div>
     function show(id){ qs(id).classList.remove('hidden'); }
     function hide(id){ qs(id).classList.add('hidden'); }
 
-    const tabs = ["menu","request","success","tariffs","profile"];
+    const tabs = ["menu","request","success","tariffs","profile","map"];
     let payload = {};
+    let mapInstance;
 
     function openTab(tab){
       tabs.forEach(t => (t===tab?show('tab-'+t):hide('tab-'+t)));
-      ['menu','request','tariffs','profile'].forEach(t=>{
+      ['menu','request','tariffs','profile','map'].forEach(t=>{
         const el = qs('btn-'+t);
         if (!el) return;
         el.classList.toggle('active', t===tab);
@@ -316,6 +337,11 @@ alt="avatar">`;
           return parts.join(", ");
         }
         qs('paddr').textContent = fmtAddr(payload) || "—";
+      }
+
+      // Подгон карты при первом открытии скрытой вкладки
+      if (tab === 'map' && mapInstance) {
+        mapInstance.container.fitToViewport();
       }
     }
 
@@ -379,13 +405,50 @@ alt="avatar">`;
     }
 
     function openBotChat() {
-  if (tg) tg.close(); // закрываем миниапп
-  tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
-}
+      if (tg) tg.close(); // закрываем миниапп
+      
+tg.openTelegramLink("https://t.me/udveri_ru_bot?start=edit_address");
+    }
       
     const { payload: pl, fromTab } = decodePayload();
     payload = pl || payload;
     openTab(fromTab || payload.tab || "menu");
+
+    // Яндекс.Карта
+    ymaps.ready(initMap);
+    function initMap() {
+      mapInstance = new ymaps.Map("map", {
+        center: [55.774804, 37.475977], // центрируем на первой точке
+        zoom: 14,
+        controls: ['zoomControl']
+      });
+
+      // Точки полигона
+      const coords = [
+        [55.774804, 37.475977],
+        [55.777298, 37.460325],
+        [55.777592, 37.460419],
+        [55.778472, 37.455083],
+        [55.778536, 37.453932],
+        [55.778490, 37.452619],
+        [55.777751, 37.451305],
+        [55.774891, 37.459357],
+        [55.769636, 37.466284],
+        [55.768881, 37.468826],
+        [55.769058, 37.473586],
+        [55.774804, 37.475977]
+      ];
+
+      // Рисуем зелёный полигон
+      const polygon = new ymaps.Polygon([coords], {}, {
+        fillColor: 'rgba(0, 255, 0, 0.3)', // зелёная прозрачная заливка
+        strokeColor: '#00FF00',            // зелёная граница
+        strokeWidth: 3
+      });
+
+      mapInstance.geoObjects.add(polygon);
+    }
   </script>
 </body>
 </html>
+
